@@ -1,16 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Heart, Star, Zap, Trophy, Monitor, Grid, Info, Share2, User, LogIn, Crown, Target, RefreshCw, Server, Gamepad2 } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Monitor, Grid, Info, User, LogIn, Crown, Target, RefreshCw, Server, Gamepad2 } from 'lucide-react';
 
-// --- مكونات واجهة المستخدم ---
+// --- مكون الإعلانات الذكي ---
+const AdSpace = ({ position, className, customImage, customLink }) => {
+  const adRef = useRef(null);
 
-const AdSpace = ({ position, className }) => (
-  <div className={`bg-slate-800/50 border border-dashed border-slate-700/50 rounded-lg flex flex-col items-center justify-center text-slate-600 p-2 my-4 ${className}`}>
-    <span className="text-[10px] font-bold tracking-wider mb-1 opacity-50">إعلان - {position}</span>
-    <div className="w-full h-full min-h-[60px] bg-slate-800/50 flex items-center justify-center text-center text-[10px] text-slate-500">
-      مساحة إعلانية (Google Ads)
+  useEffect(() => {
+    if (!customImage && adRef.current && window.adsbygoogle) {
+      try {
+        if (adRef.current.innerHTML === "") {
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
+      } catch (e) {
+        console.error("AdSense Error:", e);
+      }
+    }
+  }, [customImage]);
+
+  return (
+    <div className={`overflow-hidden rounded-xl my-4 flex justify-center items-center ${className}`}>
+      {customImage ? (
+        <a href={customLink || "#"} target="_blank" rel="noopener noreferrer" className="block w-full h-full relative group">
+            <img src={customImage} alt="إعلان خاص" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+            <div className="absolute bottom-0 right-0 bg-black/50 text-[10px] text-white px-1">راعي رسمي</div>
+        </a>
+      ) : (
+        <div className="w-full h-full bg-slate-800/50 flex flex-col items-center justify-center border border-dashed border-slate-700">
+            <span className="text-[10px] text-slate-500 mb-1">إعلان - {position}</span>
+            <ins className="adsbygoogle"
+                style={{ display: 'block', width: '100%', height: '100%' }}
+                data-ad-client="ca-pub-7564871953180369" 
+                data-ad-slot="1234567890" 
+                data-ad-format="auto"
+                data-full-width-responsive="true"
+                ref={adRef}
+            ></ins>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 const CATEGORIES = ["الكل", "Racing", "Action", "Shooting", "Arcade", "Puzzle", "Girls", "Sports"];
 
@@ -18,8 +47,6 @@ const LEADERBOARD_DATA = [
   { id: 1, name: "فهد الأسطورة", points: 15400, avatar: "🦁", rank: 1 },
   { id: 2, name: "سعود جيمر", points: 12350, avatar: "😎", rank: 2 },
   { id: 3, name: "الملكة", points: 10200, avatar: "👑", rank: 3 },
-  { id: 4, name: "صياد النوبز", points: 8500, avatar: "🏹", rank: 4 },
-  { id: 5, name: "الكاسر", points: 6200, avatar: "🔥", rank: 5 },
 ];
 
 const CARD_COLORS = [
@@ -45,7 +72,7 @@ export default function TakkiGamesPortal() {
   const [playTime, setPlayTime] = useState(0);
   const gameTimerRef = useRef(null);
 
-  // --- تحسين SEO الديناميكي ---
+  // تحسين SEO الديناميكي
   useEffect(() => {
     if (selectedGame) {
         document.title = `العب ${selectedGame.title} مجاناً | تكي قيمز`;
@@ -56,19 +83,31 @@ export default function TakkiGamesPortal() {
     }
   }, [selectedGame, activeCategory]);
 
+  // --- دالة الجلب السحرية (باستخدام الوسيط) ---
   const fetchGamesFromAutoFeed = async () => {
     setIsLoading(true);
-    const API_URL = '[https://gamemonetize.com/feed.php?format=0&num=50&page=1](https://gamemonetize.com/feed.php?format=0&num=50&page=1)';
+    
+    // رابط GameMonetize الأصلي
+    const TARGET_URL = 'https://gamemonetize.com/feed.php?format=0&num=60&page=1';
+    
+    // رابط الوسيط (Proxy) لكسر حماية CORS
+    // نستخدم allorigins.win كوسيط مجاني وموثوق
+    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
 
     try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const rawData = await response.json();
-        const gamesArray = Array.isArray(rawData) ? rawData : [];
+        const response = await fetch(PROXY_URL);
+        if (!response.ok) throw new Error("Network response was not ok");
+        
+        const data = await response.json();
+        
+        // الوسيط يعيد البيانات داخل حقل اسمه contents كنص، لذا نحتاج لتحويله
+        const actualGameData = JSON.parse(data.contents);
+        
+        if (!Array.isArray(actualGameData) || actualGameData.length === 0) {
+            throw new Error("No games found in feed");
+        }
 
-        if (gamesArray.length === 0) throw new Error("Empty Data");
-
-        const processedGames = gamesArray.map((game, index) => ({
+        const processedGames = actualGameData.map((game, index) => ({
             id: game.id || index,
             title: game.title,
             category: game.category,
@@ -82,23 +121,28 @@ export default function TakkiGamesPortal() {
 
         setGames(processedGames);
         setIsLoading(false);
-        showNotification("تم تحديث مكتبة تكي قيمز بنجاح", "success");
+        showNotification(`تم جلب ${processedGames.length} لعبة بنجاح!`, "success");
 
     } catch (error) {
-        console.error("CORS Error:", error);
-        const mockGameMonetizeResponse = [
-            { id: "1", title: "Paper.io 2", category: "Arcade", thumb: "[https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg](https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg)", url: "[https://paper-io.com](https://paper-io.com)" },
-            { id: "2", title: "Moto X3M", category: "Racing", thumb: "[https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg](https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg)", url: "[https://moto-x3m.io](https://moto-x3m.io)" },
-            { id: "3", title: "Candy Clicker", category: "Puzzle", thumb: "[https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg](https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg)", url: "[https://poki.com](https://poki.com)" },
-            { id: "4", title: "Sniper 3D", category: "Shooting", thumb: "[https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg](https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg)", url: "[https://krunker.io](https://krunker.io)" },
+        console.error("Proxy Error:", error);
+        // Fallback في حال فشل الوسيط أيضاً
+        const fallbackGames = [
+            { id: "1", title: "Paper.io 2", category: "Arcade", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
+            { id: "2", title: "Moto X3M", category: "Racing", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
+            { id: "3", title: "Candy Clicker", category: "Puzzle", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
+            { id: "4", title: "Sniper 3D", category: "Shooting", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
         ];
-        const fallbackGames = mockGameMonetizeResponse.map((game, index) => ({
-             id: game.id, title: game.title, category: game.category, image: game.thumb, 
-             color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, url: game.url
+        // تعيين Fallback games ولكن مع بيانات ملونة
+         const processedFallback = fallbackGames.map((game, index) => ({
+            ...game,
+            image: game.thumb,
+            color: CARD_COLORS[index % CARD_COLORS.length],
+            rating: "4.5", players: "10K", xpReward: 50
         }));
-        setGames(fallbackGames);
+        
+        setGames(processedFallback);
         setIsLoading(false);
-        showNotification("وضع المعاينة (تم تحميل بيانات احتياطية)", "info");
+        showNotification("تنبيه: لم يتمكن الوسيط من الجلب، نعرض ألعاب احتياطية", "info");
     }
   };
 
@@ -255,7 +299,7 @@ export default function TakkiGamesPortal() {
                     ))}
                 </div>
             </div>
-            <AdSpace position="جانبي" />
+            <AdSpace position="جانبي" className="h-[250px]" />
           </div>
         </aside>
 
@@ -263,7 +307,7 @@ export default function TakkiGamesPortal() {
           <div className="flex items-center justify-between bg-slate-800/30 border border-slate-800 rounded-lg p-3 mb-6 text-xs text-slate-400">
              <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span>حالة الخادم: <b>متصل (GameMonetize API)</b></span>
+                <span>حالة الخادم: <b>متصل (GameMonetize Live)</b></span>
              </div>
              <button onClick={fetchGamesFromAutoFeed} disabled={isLoading} className="flex items-center gap-1 hover:text-white transition-colors disabled:opacity-50">
                 <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
@@ -292,7 +336,7 @@ export default function TakkiGamesPortal() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredGames.map((game, index) => (
                 <React.Fragment key={game.id}>
-                    {index === 4 && <div className="col-span-full"><AdSpace position="بين الألعاب" className="bg-slate-800/30 border-slate-700/30 min-h-[90px]" /></div>}
+                    {index === 4 && <div className="col-span-full"><AdSpace position="بين الألعاب" className="h-[90px]" /></div>}
                     <div 
                         onClick={() => openGame(game)}
                         className="group relative bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-900/20 cursor-pointer"
@@ -366,9 +410,7 @@ export default function TakkiGamesPortal() {
                 )}
             </div>
             <div className="bg-slate-900 border-t border-slate-800 p-2 flex justify-center">
-                 <div className="w-[728px] h-[90px] bg-slate-800 border border-dashed border-slate-700 flex items-center justify-center text-slate-500 text-xs rounded">
-                     إعلان Google Ads
-                 </div>
+                 <AdSpace position="بانر أسفل اللعبة" className="w-[728px] h-[90px]" />
             </div>
         </div>
       )}
