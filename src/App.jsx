@@ -1,5 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Monitor, Grid, Info, User, LogIn, Crown, Target, RefreshCw, Server, Gamepad2 } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Monitor, Grid, Info, User, LogIn, Crown, Target, RefreshCw, Server, Gamepad2, ChevronDown } from 'lucide-react';
+
+// --- قاموس الترجمة (لتعريب التصنيفات القادمة من السيرفر) ---
+const CATEGORY_TRANSLATIONS = {
+  "Racing": "سباق",
+  "Action": "أكشن",
+  "Shooting": "تصويب",
+  "Arcade": "أركيد",
+  "Puzzle": "ألغاز",
+  "Girls": "بنات",
+  "Sports": "رياضة",
+  "Adventure": "مغامرات",
+  "Strategy": "استراتيجية",
+  "Education": "تعليم",
+  "Fighting": "قتال",
+  "Board": "ألعاب لوحية",
+  "Multiplayer": "جماعية",
+  "Driving": "قيادة",
+  "IO": "تحدي",
+  "2 Player": "لاعبين",
+  "3D": "ثلاثية الأبعاد"
+};
+
+// القائمة الجانبية (باللغة العربية)
+const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة", "مغامرات", "قيادة"];
 
 // --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
@@ -41,8 +65,6 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
   );
 };
 
-const CATEGORIES = ["الكل", "Racing", "Action", "Shooting", "Arcade", "Puzzle", "Girls", "Sports"];
-
 const LEADERBOARD_DATA = [
   { id: 1, name: "فهد الأسطورة", points: 15400, avatar: "🦁", rank: 1 },
   { id: 2, name: "سعود جيمر", points: 12350, avatar: "😎", rank: 2 },
@@ -61,6 +83,8 @@ const CARD_COLORS = [
 export default function TakkiGamesPortal() {
   const [games, setGames] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
   const [activeCategory, setActiveCategory] = useState("الكل");
   const [searchTerm, setSearchTerm] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -72,7 +96,6 @@ export default function TakkiGamesPortal() {
   const [playTime, setPlayTime] = useState(0);
   const gameTimerRef = useRef(null);
 
-  // تحسين SEO الديناميكي
   useEffect(() => {
     if (selectedGame) {
         document.title = `العب ${selectedGame.title} مجاناً | تكي قيمز`;
@@ -83,15 +106,14 @@ export default function TakkiGamesPortal() {
     }
   }, [selectedGame, activeCategory]);
 
-  // --- دالة الجلب السحرية (باستخدام الوسيط) ---
-  const fetchGamesFromAutoFeed = async () => {
-    setIsLoading(true);
+  const fetchGames = async (pageNum = 1, append = false) => {
+    if (append) {
+        setIsLoadingMore(true);
+    } else {
+        setIsLoading(true);
+    }
     
-    // رابط GameMonetize الأصلي
-    const TARGET_URL = 'https://gamemonetize.com/feed.php?format=0&num=60&page=1';
-    
-    // رابط الوسيط (Proxy) لكسر حماية CORS
-    // نستخدم allorigins.win كوسيط مجاني وموثوق
+    const TARGET_URL = `https://gamemonetize.com/feed.php?format=0&num=100&page=${pageNum}`;
     const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
 
     try {
@@ -99,56 +121,73 @@ export default function TakkiGamesPortal() {
         if (!response.ok) throw new Error("Network response was not ok");
         
         const data = await response.json();
-        
-        // الوسيط يعيد البيانات داخل حقل اسمه contents كنص، لذا نحتاج لتحويله
         const actualGameData = JSON.parse(data.contents);
         
         if (!Array.isArray(actualGameData) || actualGameData.length === 0) {
-            throw new Error("No games found in feed");
+            if (append) showNotification("لا يوجد المزيد من الألعاب حالياً", "info");
+            else throw new Error("No games found");
+            setIsLoadingMore(false);
+            setIsLoading(false);
+            return;
         }
 
-        const processedGames = actualGameData.map((game, index) => ({
-            id: game.id || index,
-            title: game.title,
-            category: game.category,
-            image: game.thumb, 
-            color: CARD_COLORS[index % CARD_COLORS.length],
-            rating: (4 + Math.random()).toFixed(1),
-            players: Math.floor(Math.random() * 50 + 10) + "K",
-            xpReward: Math.floor(Math.random() * 50 + 20),
-            url: game.url
-        }));
+        const processedGames = actualGameData.map((game, index) => {
+            // هنا تتم عملية الترجمة السحرية
+            // إذا وجدنا الترجمة في القاموس نستخدمها، وإلا نستخدم التصنيف الأصلي
+            const translatedCategory = CATEGORY_TRANSLATIONS[game.category] || "منوعات";
 
-        setGames(processedGames);
-        setIsLoading(false);
-        showNotification(`تم جلب ${processedGames.length} لعبة بنجاح!`, "success");
+            return {
+                id: game.id || `${pageNum}-${index}`,
+                title: game.title,
+                category: translatedCategory, // استخدام التصنيف المعرب
+                image: game.thumb, 
+                color: CARD_COLORS[index % CARD_COLORS.length],
+                rating: (4 + Math.random()).toFixed(1),
+                players: Math.floor(Math.random() * 50 + 10) + "K",
+                xpReward: Math.floor(Math.random() * 50 + 20),
+                url: game.url
+            };
+        });
+
+        if (append) {
+            setGames(prev => [...prev, ...processedGames]);
+            setIsLoadingMore(false);
+        } else {
+            setGames(processedGames);
+            setIsLoading(false);
+            showNotification(`تم تحميل ${processedGames.length} لعبة جديدة!`, "success");
+        }
 
     } catch (error) {
         console.error("Proxy Error:", error);
-        // Fallback في حال فشل الوسيط أيضاً
-        const fallbackGames = [
-            { id: "1", title: "Paper.io 2", category: "Arcade", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
-            { id: "2", title: "Moto X3M", category: "Racing", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
-            { id: "3", title: "Candy Clicker", category: "Puzzle", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
-            { id: "4", title: "Sniper 3D", category: "Shooting", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
-        ];
-        // تعيين Fallback games ولكن مع بيانات ملونة
-         const processedFallback = fallbackGames.map((game, index) => ({
-            ...game,
-            image: game.thumb,
-            color: CARD_COLORS[index % CARD_COLORS.length],
-            rating: "4.5", players: "10K", xpReward: 50
-        }));
-        
-        setGames(processedFallback);
-        setIsLoading(false);
-        showNotification("تنبيه: لم يتمكن الوسيط من الجلب، نعرض ألعاب احتياطية", "info");
+        if (!append) {
+             const fallbackGames = [
+                { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
+                { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
+                { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
+                { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
+            ];
+            const processedFallback = fallbackGames.map((game, index) => ({
+                ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50
+            }));
+            setGames(processedFallback);
+            setIsLoading(false);
+            showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
+        } else {
+            setIsLoadingMore(false);
+        }
     }
   };
 
   useEffect(() => {
-    fetchGamesFromAutoFeed();
+    fetchGames(1, false);
   }, []);
+
+  const handleLoadMore = () => {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchGames(nextPage, true);
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -206,7 +245,7 @@ export default function TakkiGamesPortal() {
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 hover:bg-slate-800 rounded-full text-emerald-400 transition-colors">
               <Menu size={24} />
             </button>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveCategory("الكل")}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => {setActiveCategory("الكل"); fetchGames(1, false);}}>
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-emerald-400/30 relative">
                 <Gamepad2 className="text-white" size={24} />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse"></span>
@@ -309,7 +348,7 @@ export default function TakkiGamesPortal() {
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span>حالة الخادم: <b>متصل (GameMonetize Live)</b></span>
              </div>
-             <button onClick={fetchGamesFromAutoFeed} disabled={isLoading} className="flex items-center gap-1 hover:text-white transition-colors disabled:opacity-50">
+             <button onClick={() => fetchGames(1, false)} disabled={isLoading} className="flex items-center gap-1 hover:text-white transition-colors disabled:opacity-50">
                 <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
                 تحديث
              </button>
@@ -333,6 +372,7 @@ export default function TakkiGamesPortal() {
                 ))}
              </div>
           ) : (
+            <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredGames.map((game, index) => (
                 <React.Fragment key={game.id}>
@@ -373,6 +413,27 @@ export default function TakkiGamesPortal() {
                 </React.Fragment>
                 ))}
             </div>
+            
+            <div className="mt-10 flex justify-center">
+                <button 
+                    onClick={handleLoadMore} 
+                    disabled={isLoadingMore}
+                    className="flex items-center gap-2 px-8 py-4 bg-slate-800 hover:bg-emerald-600 text-white font-bold rounded-full border border-slate-700 hover:border-emerald-500 transition-all transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                    {isLoadingMore ? (
+                        <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            جاري جلب المزيد...
+                        </>
+                    ) : (
+                        <>
+                            <ChevronDown size={20} />
+                            تحميل المزيد من الألعاب
+                        </>
+                    )}
+                </button>
+            </div>
+            </>
           )}
         </main>
       </div>
