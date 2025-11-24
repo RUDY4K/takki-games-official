@@ -16,31 +16,51 @@ const CATEGORY_TRANSLATIONS = {
 
 const CATEGORIES = ["الكل", "ورق (بلوت)", "لوحية (جاكارو)", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
-// --- ألعاب مضافة يدوياً (مثل البلوت والجاكارو) ---
-// يمكنك البحث عن روابط ألعاب "Embed" لهذه الأنواع وإضافتها هنا
+// --- ألعاب مميزة (مضافة يدوياً لعدم توفرها بكثرة في السيرفرات) ---
+// هذه روابط لألعاب HTML5 حقيقية ومشهورة
 const CUSTOM_GAMES = [
   {
-    id: "custom-1",
-    title: "بلوت VIP",
-    category: "ورق (بلوت)",
-    // هذا رابط مثال، ابحث عن رابط لعبة بلوت حقيقي يدعم التضمين (Embed)
-    url: "https://krunker.io", 
-    image: "https://store-images.s-microsoft.com/image/apps.23626.13510798887556396.96079377-0c49-447f-b672-08435f739f43.54702393-4b94-493f-807c-0323696f9628",
-    rating: "4.9",
-    players: "150K",
-    xpReward: 100,
+    id: "custom-ludo",
+    title: "ليدو الأسطورة (جاكارو)",
+    category: "لوحية (جاكارو)",
+    image: "https://img.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b-512x512.jpeg",
+    url: "https://html5.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b/", 
+    rating: "4.8",
+    players: "200K",
+    xpReward: 150,
     isHot: true
   },
   {
-    id: "custom-2",
-    title: "ليدو / جاكارو",
-    category: "لوحية (جاكارو)",
-    url: "https://ludo-hero.com", // مثال للعبة لودو
-    image: "https://img.gamedistribution.com/055d47790a9e447f8738d6f00c3a296b-512x512.jpeg",
-    rating: "4.7",
-    players: "80K",
-    xpReward: 80,
+    id: "custom-uno",
+    title: "أونو (Duo Cards)",
+    category: "ورق (بلوت)",
+    image: "https://img.gamedistribution.com/f804d32e989243d68d505a20785194e4-512x512.jpeg",
+    url: "https://html5.gamedistribution.com/f804d32e989243d68d505a20785194e4/",
+    rating: "4.9",
+    players: "500K",
+    xpReward: 120,
     isNew: true
+  },
+  {
+    id: "custom-drift",
+    title: "مملكة الهجولة (Drift)",
+    category: "سباق",
+    image: "https://img.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090-512x512.jpeg",
+    url: "https://html5.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090/",
+    rating: "4.7",
+    players: "350K",
+    xpReward: 200,
+    isHot: true
+  },
+  {
+    id: "custom-8ball",
+    title: "بلياردو المحترفين",
+    category: "رياضة",
+    image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg",
+    url: "https://html5.gamedistribution.com/9d2d564c537645d7a12a9478c4730063/",
+    rating: "4.6",
+    players: "1M",
+    xpReward: 90
   }
 ];
 
@@ -74,18 +94,20 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
   );
 };
 
-// --- مكون البانر الرئيسي (يستقبل اللعبة ديناميكياً) ---
+// --- مكون البانر الرئيسي ---
 const HeroSection = ({ game, onPlay }) => {
-  if (!game) return null;
+  // نستخدم اللعبة الممررة أو لعبة افتراضية
+  const heroGame = game || CUSTOM_GAMES[2]; // افتراضياً هجولة
+  
   return (
-    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(game)}>
+    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(heroGame)}>
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-900 z-0">
-         <img src={game.image} className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" alt={game.title} />
+         <img src={heroGame.image} className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" alt={heroGame.title} />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10"></div>
       <div className="absolute bottom-0 right-0 p-6 md:p-10 z-20 w-full md:w-2/3 text-right">
         <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full mb-3 animate-pulse">🔥 لعبة مميزة</span>
-        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{game.title}</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{heroGame.title}</h2>
         <p className="text-slate-300 text-sm md:text-base mb-6 line-clamp-2">استمتع بأقوى الألعاب الحصرية على تكي قيمز. العب الآن مجاناً وتحدى أصدقاءك!</p>
         <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm md:text-base font-bold px-8 py-3 rounded-full shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-1 flex items-center gap-2 w-fit">
           <Play size={20} fill="currentColor" /> العب الآن
@@ -99,7 +121,7 @@ const CARD_COLORS = ["from-red-600 to-orange-600", "from-emerald-600 to-green-60
 
 export default function TakkiGamesPortal() {
   const [games, setGames] = useState([]); 
-  const [featuredGame, setFeaturedGame] = useState(null); // حالة اللعبة المميزة
+  const [featuredGame, setFeaturedGame] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -184,11 +206,14 @@ export default function TakkiGamesPortal() {
             setGames(prev => [...prev, ...processedGames]);
             setIsLoadingMore(false);
         } else {
-            // دمج الألعاب المخصصة (البلوت) مع الألعاب القادمة من السيرفر
+            // دمج الألعاب الخاصة في البداية
             const allGames = [...CUSTOM_GAMES, ...processedGames];
             setGames(allGames);
-            // اختيار لعبة عشوائية للبانر من أول 10 ألعاب
-            setFeaturedGame(allGames[Math.floor(Math.random() * 10)]);
+            
+            // اختيار لعبة عشوائية للبانر (مع تفضيل الألعاب الخاصة)
+            const randomHero = allGames[Math.floor(Math.random() * 5)]; 
+            setFeaturedGame(randomHero);
+            
             setIsLoading(false);
             if(pageNum === 1) showNotification(`تم تحميل ${allGames.length} لعبة جديدة!`, "success");
         }
@@ -196,9 +221,8 @@ export default function TakkiGamesPortal() {
         console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
         if (!append) {
-             // Fallback
-             setGames(CUSTOM_GAMES); // عرض الألعاب المخصصة على الأقل في حال الفشل
-             setFeaturedGame(CUSTOM_GAMES[0]);
+             setGames(CUSTOM_GAMES); // عرض الألعاب الخاصة كحد أدنى
+             setFeaturedGame(CUSTOM_GAMES[2]);
              showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
         }
     }
@@ -216,8 +240,20 @@ export default function TakkiGamesPortal() {
   const handleLogin = (e) => { e.preventDefault(); setShowLoginModal(false); showNotification("سيتم تفعيل التسجيل قريباً!", "info"); };
 
   const filteredGames = games.filter(game => {
-    const matchesCategory = activeCategory === "الكل" || game.category.includes(activeCategory) || (activeCategory === "ورق (بلوت)" && game.category.includes("ورق")) || (activeCategory === "لوحية (جاكارو)" && game.category.includes("لوحية"));
+    // منطق الفلترة المحسن لدعم الأقسام الجديدة
+    if (activeCategory === "الكل") return game.title.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesSearch = game.title.toLowerCase().includes(searchTerm.toLowerCase());
+    let matchesCategory = false;
+
+    if (activeCategory === "ورق (بلوت)") {
+        matchesCategory = game.category.includes("ورق") || game.category.includes("Card") || game.title.includes("Solitaire") || game.title.includes("Uno");
+    } else if (activeCategory === "لوحية (جاكارو)") {
+        matchesCategory = game.category.includes("لوحية") || game.category.includes("Board") || game.title.includes("Ludo");
+    } else {
+        matchesCategory = game.category.includes(activeCategory);
+    }
+
     return matchesCategory && matchesSearch;
   });
 
@@ -269,13 +305,14 @@ export default function TakkiGamesPortal() {
               </div>
             </div>
             
+            {/* القائمة الجانبية المحسنة: ألعاب مختارة */}
             <div className="bg-slate-800/40 rounded-xl border border-slate-700/50 overflow-hidden">
                 <div className="p-3 border-b border-slate-700/50 flex items-center justify-between bg-slate-800/30">
-                    <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><TrendingUp size={14} /> ألعاب ينصح بها</h3>
+                    <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><TrendingUp size={14} /> ألعاب ننصح بها</h3>
                 </div>
                 <div className="divide-y divide-slate-700/30">
-                    {/* عرض ألعاب عشوائية من القائمة المجلوبة */}
-                    {(games.length > 0 ? games.slice(0, 5) : []).map((game, idx) => (
+                    {/* نعرض الألعاب المخصصة أولاً في القائمة الجانبية */}
+                    {CUSTOM_GAMES.map((game, idx) => (
                         <div key={idx} onClick={() => openGame(game)} className="flex items-center gap-3 p-3 hover:bg-slate-700/40 cursor-pointer transition-colors group">
                             <img src={game.image} alt={game.title} className="w-10 h-10 rounded-lg object-cover border border-slate-600 group-hover:border-emerald-500" />
                             <div className="flex-1 min-w-0">
@@ -287,7 +324,6 @@ export default function TakkiGamesPortal() {
                             </div>
                         </div>
                     ))}
-                    {games.length === 0 && <div className="p-4 text-center text-xs text-slate-500">جاري تحميل القائمة...</div>}
                 </div>
             </div>
 
