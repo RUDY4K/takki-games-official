@@ -1,0 +1,21 @@
+{
+  "name": "تكي قيمز",
+  "short_name": "TakkiGames",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "description": "أفضل ألعاب المتصفح المجانية في السعودية. العب بدون تحميل!",
+  "icons": [
+    {
+      "src": "https://img.gamedistribution.com/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://img.gamedistribution.com/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
