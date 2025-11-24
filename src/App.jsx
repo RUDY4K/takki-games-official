@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon } from 'lucide-react';
 
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
@@ -15,12 +15,18 @@ const CATEGORY_TRANSLATIONS = {
 
 const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
-// --- مكون الإعلانات الذكي ---
+// --- مكون الإعلانات الذكي (محمي) ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
   const adRef = useRef(null);
   useEffect(() => {
     if (!customImage && adRef.current && window.adsbygoogle) {
-      try { if (adRef.current.innerHTML === "") (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+      try { 
+          if (adRef.current.innerHTML === "") {
+              (window.adsbygoogle = window.adsbygoogle || []).push({}); 
+          }
+      } catch (e) { 
+          console.warn("AdSense warning:", e); 
+      }
     }
   }, [customImage]);
   
@@ -72,6 +78,8 @@ export default function TakkiGamesPortal() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
+  const [user, setUser] = useState(null); // حالة المستخدم (للمستقبل)
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [notification, setNotification] = useState(null);
   const [gameLoading, setGameLoading] = useState(false);
   const [playTime, setPlayTime] = useState(0);
@@ -88,6 +96,7 @@ export default function TakkiGamesPortal() {
   const fetchGames = async (pageNum = 1, append = false) => {
     if (append) setIsLoadingMore(true); else setIsLoading(true);
     
+    // استخدام allorigins كوسيط (أكثر استقراراً)
     const TARGET_URL = `https://gamemonetize.com/feed.php?format=0&num=${GAMES_PER_PAGE}&page=${pageNum}`;
     const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
 
@@ -96,19 +105,28 @@ export default function TakkiGamesPortal() {
         if (!response.ok) throw new Error("Network Error");
         
         const data = await response.json();
-        
         let actualGameData = [];
-        try {
-            if (data.contents) {
+        
+        // محاولة استخراج البيانات من الوسيط
+        if (data.contents) {
+            try {
                 actualGameData = JSON.parse(data.contents);
+            } catch (parseError) {
+                console.warn("JSON Parse Error", parseError);
             }
-        } catch (e) {
-            console.warn("JSON Parse error", e);
         }
         
-        if (!Array.isArray(actualGameData) || actualGameData.length === 0) {
-            if (!append) throw new Error("No games found");
-            setIsLoadingMore(false); return;
+        // إذا لم تكن مصفوفة، نستخدم مصفوفة فارغة
+        if (!Array.isArray(actualGameData)) actualGameData = [];
+        
+        // إذا لم نجد ألعاب، نستخدم بيانات احتياطية فوراً لتجنب الشاشة الفارغة
+        if (actualGameData.length === 0) {
+             if (append) {
+                 showNotification("لا يوجد المزيد من الألعاب", "info");
+                 setIsLoadingMore(false);
+                 return;
+             }
+             throw new Error("No games found via proxy");
         }
 
         const processedGames = actualGameData.map((game, index) => {
@@ -139,18 +157,22 @@ export default function TakkiGamesPortal() {
             if(pageNum === 1) showNotification(`تم تحميل ${processedGames.length} لعبة جديدة!`, "success");
         }
     } catch (error) {
-        console.error("Game Fetch Error:", error);
+        console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
+        
         if (!append) {
+             // Fallback Games: بيانات احتياطية تظهر في حال فشل الاتصال
              const fallbackGames = [
                 { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
                 { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
                 { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
                 { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
             ];
-            const processedFallback = fallbackGames.map((game, index) => ({ ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 }));
+            const processedFallback = fallbackGames.map((game, index) => ({ 
+                ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 
+            }));
             setGames(processedFallback);
-            showNotification("جاري عرض الألعاب الأساسية (يرجى التحقق من الاتصال)", "info");
+            showNotification("وضع الأمان: تم تحميل الألعاب الأساسية", "info");
         }
     }
   };
@@ -164,6 +186,7 @@ export default function TakkiGamesPortal() {
   };
   const closeGame = () => { setSelectedGame(null); if (gameTimerRef.current) clearInterval(gameTimerRef.current); };
   const showNotification = (msg, type) => { setNotification({ msg, type }); setTimeout(() => setNotification(null), 3000); };
+  const handleLogin = (e) => { e.preventDefault(); setShowLoginModal(false); showNotification("قريباً: سيتم تفعيل التسجيل!", "info"); };
 
   const filteredGames = games.filter(game => {
     const matchesCategory = activeCategory === "الكل" || game.category === activeCategory;
@@ -179,7 +202,6 @@ export default function TakkiGamesPortal() {
         </div>
       )}
 
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur-xl border-b border-slate-800 shadow-lg shadow-black/20">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -193,7 +215,9 @@ export default function TakkiGamesPortal() {
             <Search className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 pt-2.5" size={18} />
             <input type="text" placeholder="ابحث في آلاف الألعاب المجانية..." className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-sm focus:border-emerald-500 outline-none transition-all focus:bg-slate-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
-          <div className="flex items-center gap-3"></div>
+          <div className="flex items-center gap-3">
+             <button onClick={() => setShowLoginModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all"><LogIn size={18} /> <span className="hidden sm:inline">دخول</span></button>
+          </div>
         </div>
       </header>
 
@@ -234,38 +258,23 @@ export default function TakkiGamesPortal() {
                     {filteredGames.map((game, index) => (
                     <React.Fragment key={game.id}>
                         {index === 4 && <div className="col-span-full"><AdSpace position="بين الألعاب" className="bg-slate-800/30 border-slate-700/30 min-h-[90px]" /></div>}
-                        <div 
-                            onClick={() => openGame(game)}
-                            className="group relative bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-900/20 cursor-pointer"
-                        >
+                        <div onClick={() => openGame(game)} className="group relative bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-900/20 cursor-pointer">
                             <div className={`h-44 w-full bg-gradient-to-br ${game.color} relative overflow-hidden flex items-center justify-center`}>
-                                <img 
-                                    src={game.image} 
-                                    alt={game.title}
-                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-                                    onError={(e) => {e.target.style.display='none';}} 
-                                />
+                                <img src={game.image} alt={game.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500" onError={(e) => {e.target.style.display='none';}} />
                                 <div className="absolute top-3 left-3 flex gap-2 z-10">
                                     {game.isHot && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><Flame size={10} /> رائج</span>}
                                     {game.isNew && <span className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><Sparkles size={10} /> جديد</span>}
                                 </div>
-                                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
-                                    <Star size={10} className="text-yellow-400 fill-yellow-400" /> {game.rating}
-                                </div>
-                                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
-                                    <button className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
-                                        <Play size={24} className="fill-current ml-1" />
-                                    </button>
-                                </div>
+                                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10"><Star size={10} className="text-yellow-400 fill-yellow-400" /> {game.rating}</div>
+                                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20"><button className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40"><Play size={24} className="fill-current ml-1" /></button></div>
                             </div>
-
                             <div className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <h3 className="font-bold text-white truncate text-lg group-hover:text-emerald-400 transition-colors pr-1">{game.title}</h3>
                                     <div className="bg-slate-700/50 px-2 py-0.5 rounded text-[10px] text-slate-400 border border-slate-700 whitespace-nowrap">{game.category}</div>
                                 </div>
                                 <div className="flex items-center justify-between text-xs text-slate-400 mt-3 pt-3 border-t border-slate-700/50">
-                                    <div className="flex items-center gap-1.5"><User size={12} /> <span>{game.players}</span></div>
+                                    <div className="flex items-center gap-1.5"><UserIcon size={12} /> <span>{game.players}</span></div>
                                     <div className="flex items-center gap-1.5 text-emerald-400"><Target size={12} /> <span>+{game.xpReward} XP</span></div>
                                 </div>
                             </div>
@@ -273,7 +282,6 @@ export default function TakkiGamesPortal() {
                     </React.Fragment>
                     ))}
                 </div>
-                
                 <div className="mt-12 flex justify-center">
                     <button onClick={handleLoadMore} disabled={isLoadingMore} className="flex items-center gap-2 px-8 py-4 bg-slate-800 hover:bg-emerald-600 text-white font-bold rounded-full border border-slate-700 hover:border-emerald-500 transition-all transform hover:scale-105 disabled:opacity-50 shadow-lg">
                         {isLoadingMore ? "جاري جلب ألعاب جديدة..." : <><ChevronDown size={20} /> اكتشف المزيد من الألعاب</>}
@@ -284,15 +292,11 @@ export default function TakkiGamesPortal() {
         </main>
       </div>
 
-      {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-10 mt-auto">
         <div className="container mx-auto px-6 text-center md:text-right">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div>
-                    <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                        <Gamepad2 className="text-emerald-500" size={24} />
-                        <h2 className="text-xl font-black text-white">تكي قيمز</h2>
-                    </div>
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-2"><Gamepad2 className="text-emerald-500" size={24} /><h2 className="text-xl font-black text-white">تكي قيمز</h2></div>
                     <p className="text-slate-400 text-sm max-w-md">وجهتك الأولى لألعاب المتصفح المجانية في السعودية. استمتع بآلاف الألعاب بدون تحميل.</p>
                 </div>
                 <div className="flex gap-6 text-sm text-slate-400">
@@ -307,40 +311,12 @@ export default function TakkiGamesPortal() {
       {selectedGame && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#0f172a]">
             <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0 shadow-lg z-10">
-                <div className="flex items-center gap-4">
-                    <button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full transition-colors">
-                        <X size={24} />
-                    </button>
-                    <div className="flex items-center gap-3 border-r border-slate-800 pr-4 mr-2">
-                        <h3 className="font-bold text-white text-sm">{selectedGame.title}</h3>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                     <div className="bg-slate-800 px-3 py-1 rounded text-xs text-white font-mono">{Math.floor(playTime / 60)}:{String(playTime % 60).padStart(2, '0')}</div>
-                </div>
+                <div className="flex items-center gap-4"><button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full"><X size={24} /></button><div className="flex items-center gap-3 border-r border-slate-800 pr-4 mr-2"><h3 className="font-bold text-white text-sm">{selectedGame.title}</h3></div></div>
             </div>
-
             <div className="flex-1 bg-black relative overflow-hidden flex items-center justify-center">
-                {gameLoading ? (
-                    <div className="text-center space-y-4">
-                        <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                        <p className="text-emerald-400 font-bold animate-pulse">جاري تحميل اللعبة...</p>
-                    </div>
-                ) : (
-                    <iframe 
-                        className="w-full h-full border-none"
-                        title={selectedGame.title}
-                        src={selectedGame.url} 
-                        allow="autoplay; fullscreen; gamepad; gyroscope; accelerometer; clipboard-write"
-                        sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock"
-                    />
-                )}
+                {gameLoading ? <div className="text-emerald-400 font-bold animate-pulse">جاري التشغيل...</div> : <iframe className="w-full h-full border-none" src={selectedGame.url} title={selectedGame.title} allow="autoplay; fullscreen; gamepad;" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock" />}
             </div>
-            <div className="bg-slate-900 border-t border-slate-800 p-2 flex justify-center">
-                 <div className="w-[728px] h-[90px] bg-slate-800 border border-dashed border-slate-700 flex items-center justify-center text-slate-500 text-xs rounded">
-                     إعلان Google Ads
-                 </div>
-            </div>
+            <div className="bg-slate-900 border-t border-slate-800 p-2 flex justify-center"><AdSpace position="بانر أسفل اللعبة" className="w-[728px] h-[90px]" /></div>
         </div>
       )}
 
@@ -349,7 +325,7 @@ export default function TakkiGamesPortal() {
             <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl w-full max-w-md overflow-hidden relative p-8 text-center">
                 <button onClick={() => setShowLoginModal(false)} className="absolute top-4 left-4 text-slate-400 hover:text-white"><X size={20}/></button>
                 <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 ring-1 ring-emerald-500/50">
-                    <User size={32} className="text-emerald-400" />
+                    <UserIcon size={32} className="text-emerald-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">تسجيل الدخول</h2>
                 <p className="text-slate-400 text-sm mb-8">سجل دخولك لحفظ النقاط والمراكز في تكي قيمز.</p>
