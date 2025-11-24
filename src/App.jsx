@@ -1,19 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download, TrendingUp } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download, TrendingUp, Spade, Dice5 } from 'lucide-react';
 
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
 
-// --- قاموس الترجمة ---
+// --- قاموس الترجمة (تم تحديثه ليشمل البلوت والجاكارو) ---
 const CATEGORY_TRANSLATIONS = {
-  "Racing": "سباق", "Action": "أكشن", "Shooting": "تصويب", "Arcade": "أركيد",
-  "Puzzle": "ألغاز", "Girls": "بنات", "Sports": "رياضة", "Adventure": "مغامرات",
-  "Strategy": "استراتيجية", "Education": "تعليم", "Fighting": "قتال",
-  "Board": "لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
-  "2 Player": "لاعبين", "3D": "ثلاثية الأبعاد"
+  "Racing": "سباق", 
+  "Action": "أكشن", 
+  "Shooting": "تصويب", 
+  "Arcade": "أركيد",
+  "Puzzle": "ألغاز", 
+  "Girls": "بنات", 
+  "Sports": "رياضة", 
+  "Adventure": "مغامرات",
+  "Strategy": "استراتيجية", 
+  "Education": "تعليم", 
+  "Fighting": "قتال",
+  "Board": "لوحية (جاكارو)", // تعريب مخصص
+  "Card": "ورق (بلوت)",      // تعريب مخصص
+  "Casino": "ورق",
+  "Multiplayer": "جماعية", 
+  "Driving": "قيادة", 
+  "IO": "تحدي",
+  "2 Player": "لاعبين", 
+  "3D": "ثلاثية الأبعاد"
 };
 
-const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
+// ترتيب الأقسام (تم وضع الورق واللوحية في البداية)
+const CATEGORIES = ["الكل", "ورق (بلوت)", "لوحية (جاكارو)", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
 // --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
@@ -24,9 +39,7 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
           if (adRef.current.innerHTML === "") {
               (window.adsbygoogle = window.adsbygoogle || []).push({}); 
           }
-      } catch (e) { 
-          // تجاهل التحذيرات
-      }
+      } catch (e) { }
     }
   }, [customImage]);
   
@@ -40,7 +53,6 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
       ) : (
         <div className="w-full h-full bg-slate-800/50 flex flex-col items-center justify-center border border-dashed border-slate-700/50 backdrop-blur-sm min-h-[90px]">
             <span className="text-[10px] text-slate-500 mb-1">إعلان - {position}</span>
-            {/* تأكد من أن هذا الرقم هو رقمك الصحيح من أدسنس */}
             <ins className="adsbygoogle" style={{ display: 'block', width: '100%', height: '100%' }} data-ad-client="ca-pub-7564871953180369" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true" ref={adRef}></ins>
         </div>
       )}
@@ -52,7 +64,6 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
 const HeroSection = ({ onPlay }) => (
   <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={onPlay}>
     <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-900 z-0">
-       {/* تم تغيير النص البديل (alt) ليظهر بالعربية في حال لم تتحمل الصورة */}
        <img src="https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg" className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" alt="لعبة الأسبوع Moto X3M" />
     </div>
     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10"></div>
@@ -82,6 +93,7 @@ export default function TakkiGamesPortal() {
   const [gameLoading, setGameLoading] = useState(false);
   const [playTime, setPlayTime] = useState(0);
   const gameTimerRef = useRef(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     if (selectedGame) {
@@ -91,7 +103,6 @@ export default function TakkiGamesPortal() {
     }
   }, [selectedGame]);
 
-  // --- دالة المشاركة ---
   const handleShare = async () => {
     const shareData = {
       title: 'تكي قيمز',
@@ -189,6 +200,7 @@ export default function TakkiGamesPortal() {
   };
   const closeGame = () => { setSelectedGame(null); if (gameTimerRef.current) clearInterval(gameTimerRef.current); };
   const showNotification = (msg, type) => { setNotification({ msg, type }); setTimeout(() => setNotification(null), 3000); };
+  const handleLogin = (e) => { e.preventDefault(); setShowLoginModal(false); showNotification("سيتم تفعيل التسجيل قريباً!", "info"); };
 
   const filteredGames = games.filter(game => {
     const matchesCategory = activeCategory === "الكل" || game.category === activeCategory;
@@ -219,6 +231,7 @@ export default function TakkiGamesPortal() {
           </div>
           <div className="flex items-center gap-3">
              <button onClick={handleInstallHint} className="p-2 hover:bg-slate-800 rounded-full text-emerald-400 transition-colors hidden sm:block" title="تثبيت التطبيق"><Download size={20} /></button>
+             <button onClick={() => setShowLoginModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all"><UserIcon size={18} /> <span className="hidden sm:inline">دخول</span></button>
           </div>
         </div>
       </header>
@@ -232,20 +245,23 @@ export default function TakkiGamesPortal() {
               <div className="space-y-1">
                 {CATEGORIES.map(cat => (
                   <button key={cat} onClick={() => { setActiveCategory(cat); setSidebarOpen(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:bg-slate-800/50'}`}>
-                    <div className="flex items-center gap-3"><span>{cat}</span></div>
+                    <div className="flex items-center gap-3">
+                        {cat === "ورق (بلوت)" && <Spade size={16} className="text-emerald-400" />}
+                        {cat === "لوحية (جاكارو)" && <Dice5 size={16} className="text-emerald-400" />}
+                        <span>{cat}</span>
+                    </div>
                     {activeCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
                   </button>
                 ))}
               </div>
             </div>
             
-            {/* --- تم استبدال قائمة المتصدرين بقائمة الألعاب المميزة الحقيقية --- */}
+            {/* قائمة الألعاب المميزة (بديل الأبطال) */}
             <div className="bg-slate-800/40 rounded-xl border border-slate-700/50 overflow-hidden">
                 <div className="p-3 border-b border-slate-700/50 flex items-center justify-between bg-slate-800/30">
                     <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><TrendingUp size={14} /> ألعاب ينصح بها</h3>
                 </div>
                 <div className="divide-y divide-slate-700/30">
-                    {/* نعرض أول 5 ألعاب من القائمة المجلوبة بشكل عشوائي أو ثابت */}
                     {(games.length > 0 ? games.slice(0, 5) : []).map((game, idx) => (
                         <div key={idx} onClick={() => openGame(game)} className="flex items-center gap-3 p-3 hover:bg-slate-700/40 cursor-pointer transition-colors group">
                             <img src={game.image} alt={game.title} className="w-10 h-10 rounded-lg object-cover border border-slate-600 group-hover:border-emerald-500" />
@@ -258,9 +274,7 @@ export default function TakkiGamesPortal() {
                             </div>
                         </div>
                     ))}
-                    {games.length === 0 && (
-                        <div className="p-4 text-center text-xs text-slate-500">جاري تحميل القائمة...</div>
-                    )}
+                    {games.length === 0 && <div className="p-4 text-center text-xs text-slate-500">جاري تحميل القائمة...</div>}
                 </div>
             </div>
 
@@ -361,6 +375,24 @@ export default function TakkiGamesPortal() {
                 {gameLoading ? <div className="text-emerald-400 font-bold animate-pulse">جاري التشغيل...</div> : <iframe className="w-full h-full border-none" src={selectedGame.url} title={selectedGame.title} allow="autoplay; fullscreen; gamepad;" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock" />}
             </div>
             <div className="bg-slate-900 border-t border-slate-800 p-2 flex justify-center"><AdSpace position="بانر أسفل اللعبة" className="w-[728px] h-[90px]" /></div>
+        </div>
+      )}
+
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl w-full max-w-md overflow-hidden relative p-8 text-center">
+                <button onClick={() => setShowLoginModal(false)} className="absolute top-4 left-4 text-slate-400 hover:text-white"><X size={20}/></button>
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 ring-1 ring-emerald-500/50">
+                    <UserIcon size={32} className="text-emerald-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">تسجيل الدخول</h2>
+                <p className="text-slate-400 text-sm mb-8">سجل دخولك لحفظ النقاط والمراكز في تكي قيمز.</p>
+                <form onSubmit={handleLogin} className="space-y-4 text-right">
+                    <input type="text" className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white" placeholder="اسم المستخدم" required />
+                    <input type="password" className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white" placeholder="كلمة المرور" required />
+                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl mt-4">دخول</button>
+                </form>
+            </div>
         </div>
       )}
     </div>
