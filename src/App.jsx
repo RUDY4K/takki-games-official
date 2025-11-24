@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download, TrendingUp, Car, Crosshair, Puzzle, Heart, LayoutGrid, Gamepad } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download, TrendingUp, Spade, Dice5, Twitter, Instagram, Mail } from 'lucide-react';
 
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
@@ -9,23 +9,58 @@ const CATEGORY_TRANSLATIONS = {
   "Racing": "سباق", "Action": "أكشن", "Shooting": "تصويب", "Arcade": "أركيد",
   "Puzzle": "ألغاز", "Girls": "بنات", "Sports": "رياضة", "Adventure": "مغامرات",
   "Strategy": "استراتيجية", "Education": "تعليم", "Fighting": "قتال",
-  "Board": "ألعاب لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
+  "Board": "لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
   "2 Player": "لاعبين", "3D": "ثلاثية الأبعاد"
 };
 
-// --- ربط الأقسام بالأيقونات ---
-const CATEGORY_ICONS = {
-  "الكل": LayoutGrid,
-  "سباق": Car,
-  "أكشن": Zap,
-  "تصويب": Crosshair,
-  "أركيد": Gamepad,
-  "ألغاز": Puzzle,
-  "بنات": Heart,
-  "رياضة": Trophy
-};
+const CATEGORIES = ["الكل", "ورق (بلوت)", "لوحية (جاكارو)", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
-const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
+// --- ألعاب مميزة ---
+const CUSTOM_GAMES = [
+  {
+    id: "custom-ludo",
+    title: "ليدو الأسطورة (جاكارو)",
+    category: "لوحية (جاكارو)",
+    image: "https://img.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b-512x512.jpeg", 
+    url: "https://html5.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b/", 
+    rating: "4.8",
+    players: "200K",
+    xpReward: 150,
+    isHot: true
+  },
+  {
+    id: "custom-uno",
+    title: "أونو (4 Colors)",
+    category: "ورق (بلوت)",
+    image: "https://img.gamedistribution.com/f804d32e989243d68d505a20785194e4-512x512.jpeg", 
+    url: "https://html5.gamedistribution.com/f804d32e989243d68d505a20785194e4/",
+    rating: "4.9",
+    players: "500K",
+    xpReward: 120,
+    isNew: true
+  },
+  {
+    id: "custom-drift",
+    title: "مملكة الهجولة (Drift Boss)",
+    category: "سباق",
+    image: "https://img.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090-512x512.jpeg",
+    url: "https://html5.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090/",
+    rating: "4.7",
+    players: "350K",
+    xpReward: 200,
+    isHot: true
+  },
+  {
+    id: "custom-8ball",
+    title: "بلياردو المحترفين",
+    category: "رياضة",
+    image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg",
+    url: "https://html5.gamedistribution.com/9d2d564c537645d7a12a9478c4730063/",
+    rating: "4.6",
+    players: "1M",
+    xpReward: 90
+  }
+];
 
 // --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
@@ -59,22 +94,24 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
 
 // --- مكون البانر الرئيسي ---
 const HeroSection = ({ game, onPlay }) => {
-  if (!game) return null;
+  const heroGame = game || CUSTOM_GAMES[2]; 
   
   return (
-    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(game)}>
+    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(heroGame)}>
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-900 z-0">
          <img 
-            src={game.image} 
+            src={heroGame.image} 
             className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" 
-            alt={game.title}
-            onError={(e) => { e.target.style.display = 'none'; }}
+            alt={heroGame.title}
+            onError={(e) => {
+                e.target.src = "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop"; 
+            }}
          />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10"></div>
       <div className="absolute bottom-0 right-0 p-6 md:p-10 z-20 w-full md:w-2/3 text-right">
         <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full mb-3 animate-pulse">🔥 لعبة مميزة</span>
-        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{game.title}</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{heroGame.title}</h2>
         <p className="text-slate-300 text-sm md:text-base mb-6 line-clamp-2">استمتع بأقوى الألعاب الحصرية على تكي قيمز. العب الآن مجاناً وتحدى أصدقاءك!</p>
         <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm md:text-base font-bold px-8 py-3 rounded-full shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-1 flex items-center gap-2 w-fit">
           <Play size={20} fill="currentColor" /> العب الآن
@@ -173,26 +210,20 @@ export default function TakkiGamesPortal() {
             setGames(prev => [...prev, ...processedGames]);
             setIsLoadingMore(false);
         } else {
-            setGames(processedGames);
-            setFeaturedGame(processedGames[Math.floor(Math.random() * 5)]);
+            const allGames = [...CUSTOM_GAMES, ...processedGames];
+            setGames(allGames);
+            const randomHero = allGames[Math.floor(Math.random() * 5)]; 
+            setFeaturedGame(randomHero);
             setIsLoading(false);
-            if(pageNum === 1) showNotification(`تم تحميل ${processedGames.length} لعبة جديدة!`, "success");
+            if(pageNum === 1) showNotification(`تم تحميل ${allGames.length} لعبة جديدة!`, "success");
         }
     } catch (error) {
         console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
         if (!append) {
-             // Fallback Games
-             const fallbackGames = [
-                { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
-                { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
-                { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
-                { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
-            ];
-            const processedFallback = fallbackGames.map((game, index) => ({ ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 }));
-            setGames(processedFallback);
-            setFeaturedGame(processedFallback[1]);
-            showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
+             setGames(CUSTOM_GAMES); 
+             setFeaturedGame(CUSTOM_GAMES[2]);
+             showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
         }
     }
   };
@@ -209,8 +240,19 @@ export default function TakkiGamesPortal() {
   const handleLogin = (e) => { e.preventDefault(); setShowLoginModal(false); showNotification("سيتم تفعيل التسجيل قريباً!", "info"); };
 
   const filteredGames = games.filter(game => {
-    const matchesCategory = activeCategory === "الكل" || game.category.includes(activeCategory);
+    if (activeCategory === "الكل") return game.title.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesSearch = game.title.toLowerCase().includes(searchTerm.toLowerCase());
+    let matchesCategory = false;
+
+    if (activeCategory === "ورق (بلوت)") {
+        matchesCategory = game.category.includes("ورق") || game.category.includes("Card") || game.title.includes("Solitaire") || game.title.includes("Uno");
+    } else if (activeCategory === "لوحية (جاكارو)") {
+        matchesCategory = game.category.includes("لوحية") || game.category.includes("Board") || game.title.includes("Ludo");
+    } else {
+        matchesCategory = game.category.includes(activeCategory);
+    }
+
     return matchesCategory && matchesSearch;
   });
 
@@ -249,21 +291,39 @@ export default function TakkiGamesPortal() {
             <div>
               <h3 className="text-slate-400 text-xs font-bold uppercase mb-3 px-2 flex gap-2"><Grid size={14} /> الأقسام</h3>
               <div className="space-y-1">
-                {CATEGORIES.map(cat => {
-                  const Icon = CATEGORY_ICONS[cat] || LayoutGrid; // جلب الأيقونة المناسبة
-                  return (
-                    <button key={cat} onClick={() => { setActiveCategory(cat); setSidebarOpen(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:bg-slate-800/50'}`}>
-                      <div className="flex items-center gap-3">
-                          <Icon size={18} className={activeCategory === cat ? "text-emerald-400" : "text-slate-500"} />
-                          <span>{cat}</span>
-                      </div>
-                      {activeCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-                    </button>
-                  );
-                })}
+                {CATEGORIES.map(cat => (
+                  <button key={cat} onClick={() => { setActiveCategory(cat); setSidebarOpen(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:bg-slate-800/50'}`}>
+                    <div className="flex items-center gap-3">
+                        {cat === "ورق (بلوت)" && <Spade size={16} className="text-emerald-400" />}
+                        {cat === "لوحية (جاكارو)" && <Dice5 size={16} className="text-emerald-400" />}
+                        <span>{cat}</span>
+                    </div>
+                    {activeCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                  </button>
+                ))}
               </div>
             </div>
             
+            <div className="bg-slate-800/40 rounded-xl border border-slate-700/50 overflow-hidden">
+                <div className="p-3 border-b border-slate-700/50 flex items-center justify-between bg-slate-800/30">
+                    <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><TrendingUp size={14} /> ألعاب ننصح بها</h3>
+                </div>
+                <div className="divide-y divide-slate-700/30">
+                    {CUSTOM_GAMES.map((game, idx) => (
+                        <div key={idx} onClick={() => openGame(game)} className="flex items-center gap-3 p-3 hover:bg-slate-700/40 cursor-pointer transition-colors group">
+                            <img src={game.image} alt={game.title} className="w-10 h-10 rounded-lg object-cover border border-slate-600 group-hover:border-emerald-500" />
+                            <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-slate-200 truncate group-hover:text-emerald-400">{game.title}</div>
+                                <div className="text-[10px] text-slate-500">{game.category}</div>
+                            </div>
+                            <div className="text-[10px] font-bold text-yellow-500 flex items-center gap-0.5">
+                                <Star size={10} className="fill-current" /> {game.rating}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <AdSpace position="جانبي" />
           </div>
         </aside>
@@ -330,19 +390,52 @@ export default function TakkiGamesPortal() {
         </main>
       </div>
 
-      <footer className="bg-slate-900 border-t border-slate-800 py-10 mt-auto">
-        <div className="container mx-auto px-6 text-center md:text-right">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div>
-                    <div className="flex items-center justify-center md:justify-start gap-2 mb-2"><Gamepad2 className="text-emerald-500" size={24} /><h2 className="text-xl font-black text-white">تكي قيمز</h2></div>
-                    <p className="text-slate-400 text-sm max-w-md">وجهتك الأولى لألعاب المتصفح المجانية في السعودية. استمتع بآلاف الألعاب بدون تحميل.</p>
+      <footer className="bg-slate-900 border-t border-slate-800 pt-12 pb-8 mt-auto">
+        <div className="container mx-auto px-6">
+            <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-8">
+                <div className="text-center md:text-right">
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
+                        <div className="bg-emerald-500/10 p-2 rounded-lg">
+                            <Gamepad2 className="text-emerald-500" size={28} />
+                        </div>
+                        <h2 className="text-2xl font-black text-white tracking-tight">تكي قيمز</h2>
+                    </div>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-md">
+                        الوجهة الأولى للاعبين في السعودية والخليج. استمتع بأحدث ألعاب المتصفح، تحدى أصدقائك، وعش تجربة اللعب الفوري بدون تحميل.
+                    </p>
                 </div>
-                <div className="flex gap-6 text-sm text-slate-400">
-                    <a href="#" className="hover:text-emerald-400 transition-colors">شروط الاستخدام</a>
-                    <a href="#" className="hover:text-emerald-400 transition-colors">سياسة الخصوصية</a>
+
+                <div className="flex flex-col items-center md:items-end gap-4">
+                    <div className="flex gap-6 text-sm font-medium text-slate-400">
+                        <a href="#" className="hover:text-emerald-400 transition-colors duration-300">من نحن</a>
+                        <a href="#" className="hover:text-emerald-400 transition-colors duration-300">شروط الاستخدام</a>
+                        <a href="#" className="hover:text-emerald-400 transition-colors duration-300">سياسة الخصوصية</a>
+                    </div>
+                    <div className="flex gap-4">
+                        <button className="w-10 h-10 rounded-full bg-slate-800 hover:bg-emerald-600 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300">
+                            <Share2 size={18} />
+                        </button>
+                        <button className="w-10 h-10 rounded-full bg-slate-800 hover:bg-blue-500 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300">
+                            <Twitter size={18} />
+                        </button>
+                        <button className="w-10 h-10 rounded-full bg-slate-800 hover:bg-pink-600 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300">
+                            <Instagram size={18} />
+                        </button>
+                        <button className="w-10 h-10 rounded-full bg-slate-800 hover:bg-red-500 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300">
+                            <Mail size={18} />
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div className="mt-8 pt-8 border-t border-slate-800 text-xs text-slate-500 text-center">© 2024 TakkiGames.com - جميع الحقوق محفوظة.</div>
+
+            <div className="mt-12 pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+                <p>© {new Date().getFullYear()} TakkiGames.com - جميع الحقوق محفوظة.</p>
+                <div className="flex items-center gap-2">
+                    <span>صنع بحب في السعودية</span>
+                    <span className="text-red-500">❤️</span>
+                    <span className="text-2xl leading-none">🇸🇦</span>
+                </div>
+            </div>
         </div>
       </footer>
 
@@ -350,7 +443,7 @@ export default function TakkiGamesPortal() {
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#0f172a]">
             <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0 shadow-lg z-10">
                 <div className="flex items-center gap-4">
-                    <button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full"><X size={24} /></button>
+                    <button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full transition-colors"><X size={24} /></button>
                     <div className="flex items-center gap-3 border-r border-slate-800 pr-4 mr-2"><h3 className="font-bold text-white text-sm">{selectedGame.title}</h3></div>
                 </div>
                 <div className="flex items-center gap-4">
