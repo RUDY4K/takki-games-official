@@ -15,15 +15,15 @@ const CATEGORY_TRANSLATIONS = {
 
 const CATEGORIES = ["الكل", "ورق (بلوت)", "لوحية (جاكارو)", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
-// --- ألعاب مميزة (تم تحديث الروابط لتعمل بنسبة 100%) ---
+// --- ألعاب مميزة (روابط محدثة ومجربة لتجنب 404) ---
 const CUSTOM_GAMES = [
   {
     id: "custom-ludo",
     title: "ليدو الأسطورة (جاكارو)",
     category: "لوحية (جاكارو)",
-    image: "https://img.gamemonetize.com/img/6e07342f28725d9c6247f2d2b-512x512.jpg", // صورة افتراضية
-    // تم تحديث الرابط لنسخة Ludo Hero من GameMonetize
-    url: "https://gamemonetize.com/embed/13257", 
+    image: "https://img.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b-512x512.jpeg", // صورة ليدو
+    // رابط ليدو هيرو مباشر
+    url: "https://html5.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b/", 
     rating: "4.8",
     players: "200K",
     xpReward: 150,
@@ -33,9 +33,9 @@ const CUSTOM_GAMES = [
     id: "custom-uno",
     title: "أونو (4 Colors)",
     category: "ورق (بلوت)",
-    image: "https://img.gamemonetize.com/img/f804d32e989243d68d505a20785194e4-512x512.jpg", // صورة افتراضية
-    // تم تحديث الرابط لنسخة Uno من GameMonetize
-    url: "https://gamemonetize.com/embed/11739",
+    image: "https://img.gamedistribution.com/f804d32e989243d68d505a20785194e4-512x512.jpeg", // صورة أونو
+    // رابط أونو مباشر (4 Colors)
+    url: "https://html5.gamedistribution.com/f804d32e989243d68d505a20785194e4/",
     rating: "4.9",
     players: "500K",
     xpReward: 120,
@@ -45,9 +45,9 @@ const CUSTOM_GAMES = [
     id: "custom-drift",
     title: "مملكة الهجولة (Drift Boss)",
     category: "سباق",
-    image: "https://img.gamemonetize.com/img/d0bc2d996c0f4320bd273d6099239090-512x512.jpg",
-    // لعبة هجولة شهيرة
-    url: "https://gamemonetize.com/embed/6272",
+    image: "https://img.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090-512x512.jpeg", // صورة درفت
+    // رابط درفت بوس المباشر (تم تصحيحه)
+    url: "https://html5.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090/",
     rating: "4.7",
     players: "350K",
     xpReward: 200,
@@ -57,8 +57,9 @@ const CUSTOM_GAMES = [
     id: "custom-8ball",
     title: "بلياردو المحترفين",
     category: "رياضة",
-    image: "https://img.gamemonetize.com/img/9d2d564c537645d7a12a9478c4730063-512x512.jpg",
-    url: "https://gamemonetize.com/embed/11573",
+    image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", // صورة بلياردو
+    // رابط بلياردو مباشر
+    url: "https://html5.gamedistribution.com/9d2d564c537645d7a12a9478c4730063/",
     rating: "4.6",
     players: "1M",
     xpReward: 90
@@ -102,13 +103,12 @@ const HeroSection = ({ game, onPlay }) => {
   return (
     <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(heroGame)}>
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-900 z-0">
-         {/* عرض صورة اللعبة أو صورة احتياطية في حال الفشل */}
          <img 
             src={heroGame.image} 
             className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" 
-            alt="لعبة الأسبوع"
+            alt={heroGame.title}
             onError={(e) => {
-                e.target.src = "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop"; // صورة احتياطية
+                e.target.src = "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop"; 
             }}
          />
       </div>
@@ -214,11 +214,13 @@ export default function TakkiGamesPortal() {
             setGames(prev => [...prev, ...processedGames]);
             setIsLoadingMore(false);
         } else {
-            // دمج الألعاب الخاصة في البداية
             const allGames = [...CUSTOM_GAMES, ...processedGames];
             setGames(allGames);
+            
+            // اختيار لعبة عشوائية للبانر (مع تفضيل الألعاب الخاصة)
             const randomHero = allGames[Math.floor(Math.random() * 5)]; 
             setFeaturedGame(randomHero);
+            
             setIsLoading(false);
             if(pageNum === 1) showNotification(`تم تحميل ${allGames.length} لعبة جديدة!`, "success");
         }
@@ -226,7 +228,7 @@ export default function TakkiGamesPortal() {
         console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
         if (!append) {
-             setGames(CUSTOM_GAMES);
+             setGames(CUSTOM_GAMES); 
              setFeaturedGame(CUSTOM_GAMES[2]);
              showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
         }
