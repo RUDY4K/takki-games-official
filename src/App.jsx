@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, LogIn } from 'lucide-react';
 
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
@@ -15,7 +15,7 @@ const CATEGORY_TRANSLATIONS = {
 
 const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
-// --- مكون الإعلانات الذكي (محمي) ---
+// --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
   const adRef = useRef(null);
   useEffect(() => {
@@ -25,7 +25,7 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
               (window.adsbygoogle = window.adsbygoogle || []).push({}); 
           }
       } catch (e) { 
-          console.warn("AdSense warning:", e); 
+          // تجاهل أخطاء الإعلانات لمنع توقف الموقع
       }
     }
   }, [customImage]);
@@ -78,7 +78,7 @@ export default function TakkiGamesPortal() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
-  const [user, setUser] = useState(null); // حالة المستخدم (للمستقبل)
+  const [user, setUser] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [notification, setNotification] = useState(null);
   const [gameLoading, setGameLoading] = useState(false);
@@ -96,37 +96,22 @@ export default function TakkiGamesPortal() {
   const fetchGames = async (pageNum = 1, append = false) => {
     if (append) setIsLoadingMore(true); else setIsLoading(true);
     
-    // استخدام allorigins كوسيط (أكثر استقراراً)
+    // استخدام corsproxy.io (الأسرع والأكثر استقراراً)
     const TARGET_URL = `https://gamemonetize.com/feed.php?format=0&num=${GAMES_PER_PAGE}&page=${pageNum}`;
-    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
+    const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(TARGET_URL)}`;
 
     try {
         const response = await fetch(PROXY_URL);
         if (!response.ok) throw new Error("Network Error");
         
         const data = await response.json();
-        let actualGameData = [];
         
-        // محاولة استخراج البيانات من الوسيط
-        if (data.contents) {
-            try {
-                actualGameData = JSON.parse(data.contents);
-            } catch (parseError) {
-                console.warn("JSON Parse Error", parseError);
-            }
-        }
+        // التحقق من أن البيانات مصفوفة
+        const actualGameData = Array.isArray(data) ? data : [];
         
-        // إذا لم تكن مصفوفة، نستخدم مصفوفة فارغة
-        if (!Array.isArray(actualGameData)) actualGameData = [];
-        
-        // إذا لم نجد ألعاب، نستخدم بيانات احتياطية فوراً لتجنب الشاشة الفارغة
         if (actualGameData.length === 0) {
-             if (append) {
-                 showNotification("لا يوجد المزيد من الألعاب", "info");
-                 setIsLoadingMore(false);
-                 return;
-             }
-             throw new Error("No games found via proxy");
+            if (!append) throw new Error("No games found");
+            setIsLoadingMore(false); return;
         }
 
         const processedGames = actualGameData.map((game, index) => {
@@ -157,22 +142,19 @@ export default function TakkiGamesPortal() {
             if(pageNum === 1) showNotification(`تم تحميل ${processedGames.length} لعبة جديدة!`, "success");
         }
     } catch (error) {
-        console.error("Fetch Error:", error);
+        console.error("Game Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
-        
         if (!append) {
-             // Fallback Games: بيانات احتياطية تظهر في حال فشل الاتصال
+             // Fallback Games
              const fallbackGames = [
                 { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
                 { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
                 { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
                 { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
             ];
-            const processedFallback = fallbackGames.map((game, index) => ({ 
-                ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 
-            }));
+            const processedFallback = fallbackGames.map((game, index) => ({ ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 }));
             setGames(processedFallback);
-            showNotification("وضع الأمان: تم تحميل الألعاب الأساسية", "info");
+            showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
         }
     }
   };
@@ -186,7 +168,13 @@ export default function TakkiGamesPortal() {
   };
   const closeGame = () => { setSelectedGame(null); if (gameTimerRef.current) clearInterval(gameTimerRef.current); };
   const showNotification = (msg, type) => { setNotification({ msg, type }); setTimeout(() => setNotification(null), 3000); };
-  const handleLogin = (e) => { e.preventDefault(); setShowLoginModal(false); showNotification("قريباً: سيتم تفعيل التسجيل!", "info"); };
+  
+  // تسجيل دخول وهمي للمظهر فقط حالياً
+  const handleLogin = (e) => { 
+      e.preventDefault(); 
+      setShowLoginModal(false); 
+      showNotification("سيتم تفعيل التسجيل قريباً!", "info"); 
+  };
 
   const filteredGames = games.filter(game => {
     const matchesCategory = activeCategory === "الكل" || game.category === activeCategory;
@@ -202,6 +190,7 @@ export default function TakkiGamesPortal() {
         </div>
       )}
 
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur-xl border-b border-slate-800 shadow-lg shadow-black/20">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -274,6 +263,7 @@ export default function TakkiGamesPortal() {
                                     <div className="bg-slate-700/50 px-2 py-0.5 rounded text-[10px] text-slate-400 border border-slate-700 whitespace-nowrap">{game.category}</div>
                                 </div>
                                 <div className="flex items-center justify-between text-xs text-slate-400 mt-3 pt-3 border-t border-slate-700/50">
+                                    {/* تم استخدام UserIcon هنا بدلاً من User لمنع التصادم */}
                                     <div className="flex items-center gap-1.5"><UserIcon size={12} /> <span>{game.players}</span></div>
                                     <div className="flex items-center gap-1.5 text-emerald-400"><Target size={12} /> <span>+{game.xpReward} XP</span></div>
                                 </div>
