@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, LogIn } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download } from 'lucide-react';
 
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
@@ -15,6 +15,40 @@ const CATEGORY_TRANSLATIONS = {
 
 const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
+// --- دالة SEO السحرية (تسويق تلقائي لقوقل) ---
+const updateSEOSchema = (game) => {
+  if (!game) return;
+  
+  // حذف أي بيانات قديمة
+  const oldScript = document.getElementById('game-schema');
+  if (oldScript) oldScript.remove();
+
+  // إنشاء بيانات منظمة جديدة (JSON-LD)
+  const script = document.createElement('script');
+  script.id = 'game-schema';
+  script.type = 'application/ld+json';
+  script.text = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": game.title,
+    "description": `العب ${game.title} اون لاين مجاناً على تكي قيمز. لعبة من قسم ${game.category} بدون تحميل.`,
+    "genre": game.category,
+    "url": window.location.href,
+    "image": game.image,
+    "playMode": "SinglePlayer",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": game.rating,
+      "ratingCount": "1000",
+      "bestRating": "5",
+      "worstRating": "1"
+    }
+  });
+  document.head.appendChild(script);
+};
+
 // --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
   const adRef = useRef(null);
@@ -25,7 +59,7 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
               (window.adsbygoogle = window.adsbygoogle || []).push({}); 
           }
       } catch (e) { 
-          // تجاهل أخطاء الإعلانات لمنع توقف الموقع
+          // تجاهل التحذيرات
       }
     }
   }, [customImage]);
@@ -40,7 +74,6 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
       ) : (
         <div className="w-full h-full bg-slate-800/50 flex flex-col items-center justify-center border border-dashed border-slate-700/50 backdrop-blur-sm min-h-[90px]">
             <span className="text-[10px] text-slate-500 mb-1">إعلان - {position}</span>
-            {/* تأكد من أن هذا الرقم هو رقمك الصحيح من أدسنس */}
             <ins className="adsbygoogle" style={{ display: 'block', width: '100%', height: '100%' }} data-ad-client="ca-pub-7564871953180369" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true" ref={adRef}></ins>
         </div>
       )}
@@ -58,7 +91,7 @@ const HeroSection = ({ onPlay }) => (
     <div className="absolute bottom-0 right-0 p-6 md:p-10 z-20 w-full md:w-2/3 text-right">
       <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full mb-3 animate-pulse">🔥 لعبة الأسبوع</span>
       <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg">Moto X3M</h2>
-      <p className="text-slate-300 text-sm md:text-base mb-6 line-clamp-2">تحدى الجاذبية في أقوى لعبة سباق دراجات نارية. هل يمكنك تجاوز العقبات والوصول لخط النهاية؟</p>
+      <p className="text-slate-300 text-sm md:text-base mb-6 line-clamp-2">تحدى الجاذبية في أقوى لعبة سباق دراجات نارية.</p>
       <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm md:text-base font-bold px-8 py-3 rounded-full shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-1 flex items-center gap-2 w-fit">
         <Play size={20} fill="currentColor" /> العب الآن مجاناً
       </button>
@@ -88,17 +121,44 @@ export default function TakkiGamesPortal() {
   useEffect(() => {
     if (selectedGame) {
         document.title = `العب ${selectedGame.title} مجاناً | تكي قيمز`;
+        updateSEOSchema(selectedGame); // تفعيل SEO التلقائي
     } else {
         document.title = "تكي قيمز | أفضل العاب المتصفح المجانية في السعودية";
     }
   }, [selectedGame]);
 
+  // --- دالة المشاركة (التسويق الفيروسي) ---
+  const handleShare = async () => {
+    const shareData = {
+      title: 'تكي قيمز',
+      text: selectedGame ? `تعال تحداني في لعبة ${selectedGame.title} على تكي قيمز! 🔥` : 'أفضل موقع ألعاب أونلاين في السعودية 🇸🇦',
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        showNotification("شكراً لمشاركة الموقع! 💚", "success");
+      } else {
+        // نسخ الرابط إذا لم يدعم المتصفح المشاركة
+        await navigator.clipboard.writeText(window.location.href);
+        showNotification("تم نسخ الرابط، شاركه مع أصدقائك!", "success");
+      }
+    } catch (err) {
+      console.log('Share canceled');
+    }
+  };
+
+  // --- دالة تثبيت التطبيق (PWA Hint) ---
+  const handleInstallHint = () => {
+      showNotification("قريباً: ستتمكن من تثبيت الموقع كتطبيق!", "info");
+  };
+
   const fetchGames = async (pageNum = 1, append = false) => {
     if (append) setIsLoadingMore(true); else setIsLoading(true);
     
-    // استخدام corsproxy.io (الأسرع والأكثر استقراراً)
     const TARGET_URL = `https://gamemonetize.com/feed.php?format=0&num=${GAMES_PER_PAGE}&page=${pageNum}`;
-    const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(TARGET_URL)}`;
+    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
 
     try {
         const response = await fetch(PROXY_URL);
@@ -106,10 +166,16 @@ export default function TakkiGamesPortal() {
         
         const data = await response.json();
         
-        // التحقق من أن البيانات مصفوفة
-        const actualGameData = Array.isArray(data) ? data : [];
+        let actualGameData = [];
+        try {
+            if (data.contents) {
+                actualGameData = JSON.parse(data.contents);
+            }
+        } catch (e) {
+            console.warn("JSON Parse error", e);
+        }
         
-        if (actualGameData.length === 0) {
+        if (!Array.isArray(actualGameData) || actualGameData.length === 0) {
             if (!append) throw new Error("No games found");
             setIsLoadingMore(false); return;
         }
@@ -142,17 +208,18 @@ export default function TakkiGamesPortal() {
             if(pageNum === 1) showNotification(`تم تحميل ${processedGames.length} لعبة جديدة!`, "success");
         }
     } catch (error) {
-        console.error("Game Fetch Error:", error);
+        console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
         if (!append) {
-             // Fallback Games
              const fallbackGames = [
                 { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
                 { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
                 { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
                 { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
             ];
-            const processedFallback = fallbackGames.map((game, index) => ({ ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 }));
+            const processedFallback = fallbackGames.map((game, index) => ({ 
+                ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 
+            }));
             setGames(processedFallback);
             showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
         }
@@ -168,13 +235,7 @@ export default function TakkiGamesPortal() {
   };
   const closeGame = () => { setSelectedGame(null); if (gameTimerRef.current) clearInterval(gameTimerRef.current); };
   const showNotification = (msg, type) => { setNotification({ msg, type }); setTimeout(() => setNotification(null), 3000); };
-  
-  // تسجيل دخول وهمي للمظهر فقط حالياً
-  const handleLogin = (e) => { 
-      e.preventDefault(); 
-      setShowLoginModal(false); 
-      showNotification("سيتم تفعيل التسجيل قريباً!", "info"); 
-  };
+  const handleLogin = (e) => { e.preventDefault(); setShowLoginModal(false); showNotification("سيتم تفعيل التسجيل قريباً!", "info"); };
 
   const filteredGames = games.filter(game => {
     const matchesCategory = activeCategory === "الكل" || game.category === activeCategory;
@@ -190,7 +251,6 @@ export default function TakkiGamesPortal() {
         </div>
       )}
 
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur-xl border-b border-slate-800 shadow-lg shadow-black/20">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -205,7 +265,8 @@ export default function TakkiGamesPortal() {
             <input type="text" placeholder="ابحث في آلاف الألعاب المجانية..." className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-sm focus:border-emerald-500 outline-none transition-all focus:bg-slate-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
           <div className="flex items-center gap-3">
-             <button onClick={() => setShowLoginModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all"><LogIn size={18} /> <span className="hidden sm:inline">دخول</span></button>
+             <button onClick={handleInstallHint} className="p-2 hover:bg-slate-800 rounded-full text-emerald-400 transition-colors hidden sm:block" title="تثبيت التطبيق"><Download size={20} /></button>
+             <button onClick={() => setShowLoginModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all"><UserIcon size={18} /> <span className="hidden sm:inline">دخول</span></button>
           </div>
         </div>
       </header>
@@ -224,6 +285,20 @@ export default function TakkiGamesPortal() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="bg-slate-800/40 rounded-xl border border-slate-700/50 overflow-hidden">
+                <div className="p-3 border-b border-slate-700/50 flex items-center justify-between bg-slate-800/30">
+                    <h3 className="text-xs font-bold text-yellow-500 flex items-center gap-1.5"><Trophy size={14} /> أبطال تكي قيمز</h3>
+                </div>
+                <div className="divide-y divide-slate-700/30">
+                    {LEADERBOARD_DATA.slice(0, 3).map((player, idx) => (
+                        <div key={player.id} className="flex items-center gap-3 p-3">
+                            <div className="text-xs font-bold text-slate-400">{idx + 1}</div>
+                            <div className="flex-1 min-w-0 text-xs font-bold text-slate-200">{player.name}</div>
+                            <div className="text-sm">{player.avatar}</div>
+                        </div>
+                    ))}
+                </div>
             </div>
             <AdSpace position="جانبي" />
           </div>
@@ -263,7 +338,6 @@ export default function TakkiGamesPortal() {
                                     <div className="bg-slate-700/50 px-2 py-0.5 rounded text-[10px] text-slate-400 border border-slate-700 whitespace-nowrap">{game.category}</div>
                                 </div>
                                 <div className="flex items-center justify-between text-xs text-slate-400 mt-3 pt-3 border-t border-slate-700/50">
-                                    {/* تم استخدام UserIcon هنا بدلاً من User لمنع التصادم */}
                                     <div className="flex items-center gap-1.5"><UserIcon size={12} /> <span>{game.players}</span></div>
                                     <div className="flex items-center gap-1.5 text-emerald-400"><Target size={12} /> <span>+{game.xpReward} XP</span></div>
                                 </div>
@@ -301,7 +375,13 @@ export default function TakkiGamesPortal() {
       {selectedGame && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#0f172a]">
             <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0 shadow-lg z-10">
-                <div className="flex items-center gap-4"><button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full"><X size={24} /></button><div className="flex items-center gap-3 border-r border-slate-800 pr-4 mr-2"><h3 className="font-bold text-white text-sm">{selectedGame.title}</h3></div></div>
+                <div className="flex items-center gap-4">
+                    <button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full"><X size={24} /></button>
+                    <div className="flex items-center gap-3 border-r border-slate-800 pr-4 mr-2"><h3 className="font-bold text-white text-sm">{selectedGame.title}</h3></div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button onClick={handleShare} className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full flex items-center gap-2 px-4 text-xs font-bold"><Share2 size={16} /> <span className="hidden sm:inline">مشاركة</span></button>
+                </div>
             </div>
             <div className="flex-1 bg-black relative overflow-hidden flex items-center justify-center">
                 {gameLoading ? <div className="text-emerald-400 font-bold animate-pulse">جاري التشغيل...</div> : <iframe className="w-full h-full border-none" src={selectedGame.url} title={selectedGame.title} allow="autoplay; fullscreen; gamepad;" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock" />}
