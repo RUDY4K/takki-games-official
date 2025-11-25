@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download, TrendingUp, Car, Crosshair, Puzzle, Heart, LayoutGrid, Gamepad, Twitter, Instagram, Mail } from 'lucide-react';
+import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Gamepad2, ChevronDown, Flame, Sparkles, User as UserIcon, Share2, Download, TrendingUp, Car, Crosshair, Puzzle, Heart, LayoutGrid, Gamepad, Twitter, Instagram, Mail, Video } from 'lucide-react';
 
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
@@ -9,41 +9,76 @@ const CATEGORY_TRANSLATIONS = {
   "Racing": "سباق", "Action": "أكشن", "Shooting": "تصويب", "Arcade": "أركيد",
   "Puzzle": "ألغاز", "Girls": "بنات", "Sports": "رياضة", "Adventure": "مغامرات",
   "Strategy": "استراتيجية", "Education": "تعليم", "Fighting": "قتال",
-  "Board": "لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
+  "Board": "ألعاب لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
   "2 Player": "لاعبين", "3D": "ثلاثية الأبعاد"
+};
+
+// --- ربط الأقسام بالأيقونات ---
+const CATEGORY_ICONS = {
+  "الكل": LayoutGrid,
+  "سباق": Car,
+  "أكشن": Zap,
+  "تصويب": Crosshair,
+  "أركيد": Gamepad,
+  "ألغاز": Puzzle,
+  "بنات": Heart,
+  "رياضة": Trophy
 };
 
 const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
-const CATEGORY_ICONS = {
-  "الكل": LayoutGrid, "سباق": Car, "أكشن": Zap, "تصويب": Crosshair,
-  "أركيد": Gamepad, "ألغاز": Puzzle, "بنات": Heart, "رياضة": Trophy
-};
+// --- مكون فيديو الشرح (Walkthrough) الجديد ---
+const Walkthrough = ({ gameId }) => {
+  const containerRef = useRef(null);
 
-// --- قائمة الألعاب الاحتياطية (تظهر فوراً في حال تأخر السيرفر) ---
-// هذه القائمة تضمن أن الموقع لن يظهر فارغاً أبداً
-const BACKUP_GAMES = [
-  { id: "b1", title: "Subway Surfers", category: "أكشن", image: "https://img.gamedistribution.com/0c2a7c7380624a57a1197225a6503550-512x512.jpeg", url: "https://html5.gamedistribution.com/0c2a7c7380624a57a1197225a6503550/", rating: "4.9", players: "1M+" },
-  { id: "b2", title: "Temple Run 2", category: "مغامرات", image: "https://img.gamedistribution.com/f6c4c213338147e28606478f4561b30b-512x512.jpeg", url: "https://html5.gamedistribution.com/f6c4c213338147e28606478f4561b30b/", rating: "4.8", players: "800K" },
-  { id: "b3", title: "Candy Riddles", category: "ألغاز", image: "https://img.gamedistribution.com/4e25605750b1450ba0125a36e0498dc2-512x512.jpeg", url: "https://html5.gamedistribution.com/4e25605750b1450ba0125a36e0498dc2/", rating: "4.7", players: "500K" },
-  { id: "b4", title: "8 Ball Pool", category: "رياضة", image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://html5.gamedistribution.com/9d2d564c537645d7a12a9478c4730063/", rating: "4.6", players: "1.2M" },
-  { id: "b5", title: "Moto X3M", category: "سباق", image: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://html5.gamedistribution.com/5d508d0393344338b71d723341594892/", rating: "4.9", players: "900K", isHot: true },
-  { id: "b6", title: "Stickman Hook", category: "أكشن", image: "https://img.gamedistribution.com/9d24c696657c4a5e855137640b271b09-512x512.jpeg", url: "https://html5.gamedistribution.com/9d24c696657c4a5e855137640b271b09/", rating: "4.5", players: "400K" },
-  { id: "b7", title: "Bubble Shooter", category: "أركيد", image: "https://img.gamedistribution.com/8479756a8f22444990c215071806f4a6-512x512.jpeg", url: "https://html5.gamedistribution.com/8479756a8f22444990c215071806f4a6/", rating: "4.4", players: "300K" },
-  { id: "b8", title: "Ludo Hero", category: "ألعاب لوحية", image: "https://img.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b-512x512.jpeg", url: "https://html5.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b/", rating: "4.8", players: "600K" },
-  { id: "b9", title: "Uno Online", category: "ورق", image: "https://img.gamedistribution.com/f804d32e989243d68d505a20785194e4-512x512.jpeg", url: "https://html5.gamedistribution.com/f804d32e989243d68d505a20785194e4/", rating: "4.7", players: "1M" },
-  { id: "b10", title: "Drift Boss", category: "سباق", image: "https://img.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090-512x512.jpeg", url: "https://html5.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090/", rating: "4.6", players: "250K" },
-  { id: "b11", title: "Basketball Stars", category: "رياضة", image: "https://img.gamedistribution.com/6603602797824b51a8d42277075824f4-512x512.jpeg", url: "https://html5.gamedistribution.com/6603602797824b51a8d42277075824f4/", rating: "4.5", players: "350K" },
-  { id: "b12", title: "Fireboy & Watergirl", category: "مغامرات", image: "https://img.gamedistribution.com/6a08097f3a694d1796f421762922e059-512x512.jpeg", url: "https://html5.gamedistribution.com/6a08097f3a694d1796f421762922e059/", rating: "4.8", players: "2M" },
-  { id: "b13", title: "Pac-Xon", category: "أركيد", image: "https://img.gamedistribution.com/e1692f876f64429797a4c28405b3a639-512x512.jpeg", url: "https://html5.gamedistribution.com/e1692f876f64429797a4c28405b3a639/", rating: "4.3", players: "150K" },
-  { id: "b14", title: "Football Legends", category: "رياضة", image: "https://img.gamedistribution.com/1832764045f14268ad5567760b525485-512x512.jpeg", url: "https://html5.gamedistribution.com/1832764045f14268ad5567760b525485/", rating: "4.6", players: "500K" },
-  { id: "b15", title: "Vex 4", category: "أكشن", image: "https://img.gamedistribution.com/8b462504672846a69814a28a007a73e5-512x512.jpeg", url: "https://html5.gamedistribution.com/8b462504672846a69814a28a007a73e5/", rating: "4.7", players: "400K" },
-  { id: "b16", title: "Paper.io 2", category: "تحدي", image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com", rating: "4.8", players: "3M", isHot: true },
-  { id: "b17", title: "Chess Grandmaster", category: "استراتيجية", image: "https://img.gamedistribution.com/6c92d162e0404b37af7204342c836221-512x512.jpeg", url: "https://html5.gamedistribution.com/6c92d162e0404b37af7204342c836221/", rating: "4.5", players: "200K" },
-  { id: "b18", title: "Cooking Fast", category: "بنات", image: "https://img.gamedistribution.com/1133146707f045458006dc1f78124f47-512x512.jpeg", url: "https://html5.gamedistribution.com/1133146707f045458006dc1f78124f47/", rating: "4.6", players: "600K" },
-  { id: "b19", title: "Truck Trials", category: "سباق", image: "https://img.gamedistribution.com/c642041728834816828695c235f1d610-512x512.jpeg", url: "https://html5.gamedistribution.com/c642041728834816828695c235f1d610/", rating: "4.4", players: "100K" },
-  { id: "b20", title: "Solitaire Classic", category: "ورق", image: "https://img.gamedistribution.com/73343666631c4b709854df60e5441ec2-512x512.jpeg", url: "https://html5.gamedistribution.com/73343666631c4b709854df60e5441ec2/", rating: "4.7", players: "1M+" }
-];
+  useEffect(() => {
+    // إعداد خيارات الفيديو حسب ملف PDF
+    window.VIDEO_OPTIONS = {
+      gameid: gameId,
+      width: "100%",
+      height: "480px",
+      color: "#10b981", // لون التم (الزمردي)
+      getads: "true"    // تفعيل الإعلانات لزيادة الربح
+    };
+
+    // دالة لحقن السكريبت
+    const loadScript = () => {
+        const script = document.createElement("script");
+        script.src = "https://api.gamemonetize.com/video.js";
+        script.id = "gamemonetize-video-script";
+        document.body.appendChild(script);
+    };
+
+    // تنظيف السكريبت القديم وإعادة تحميله عند تغيير اللعبة
+    const existingScript = document.getElementById("gamemonetize-video-script");
+    if (existingScript) {
+        existingScript.remove();
+    }
+    
+    // تأخير بسيط لضمان التنظيف
+    setTimeout(loadScript, 50);
+
+    return () => {
+        const s = document.getElementById("gamemonetize-video-script");
+        if (s) s.remove();
+    }
+  }, [gameId]);
+
+  return (
+    <div className="w-full max-w-4xl mx-auto mt-8 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
+        <div className="bg-slate-900/50 p-4 border-b border-slate-700 flex items-center gap-2">
+            <Video className="text-emerald-500" size={24} />
+            <h3 className="text-white font-bold text-lg">طريقة الفوز (Walkthrough)</h3>
+        </div>
+        <div className="p-4 bg-black min-h-[480px] flex items-center justify-center">
+             <div id="gamemonetize-video" className="w-full"></div>
+        </div>
+        <div className="p-3 bg-slate-900/50 text-center text-xs text-slate-500">
+            شاهد الفيديو لمعرفة كيفية تجاوز المراحل الصعبة
+        </div>
+    </div>
+  );
+};
 
 // --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
@@ -77,24 +112,22 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
 
 // --- مكون البانر الرئيسي ---
 const HeroSection = ({ game, onPlay }) => {
-  // إذا لم تتوفر لعبة، نستخدم Moto X3M كلعبة افتراضية
-  const heroGame = game || BACKUP_GAMES[4]; 
+  if (!game) return null;
   
   return (
-    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(heroGame)}>
+    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(game)}>
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-900 z-0">
          <img 
-            src={heroGame.image} 
+            src={game.image} 
             className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" 
-            alt={heroGame.title}
-            loading="eager"
+            alt={game.title}
             onError={(e) => { e.target.style.display = 'none'; }}
          />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10"></div>
       <div className="absolute bottom-0 right-0 p-6 md:p-10 z-20 w-full md:w-2/3 text-right">
         <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full mb-3 animate-pulse">🔥 لعبة مميزة</span>
-        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{heroGame.title}</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{game.title}</h2>
         <p className="text-slate-300 text-sm md:text-base mb-6 line-clamp-2">استمتع بأقوى الألعاب الحصرية على تكي قيمز. العب الآن مجاناً وتحدى أصدقاءك!</p>
         <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm md:text-base font-bold px-8 py-3 rounded-full shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-1 flex items-center gap-2 w-fit">
           <Play size={20} fill="currentColor" /> العب الآن
@@ -122,7 +155,14 @@ export default function TakkiGamesPortal() {
   const gameTimerRef = useRef(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // --- دالة المشاركة ---
+  useEffect(() => {
+    if (selectedGame) {
+        document.title = `العب ${selectedGame.title} مجاناً | تكي قيمز`;
+    } else {
+        document.title = "تكي قيمز | أفضل العاب المتصفح المجانية في السعودية";
+    }
+  }, [selectedGame]);
+
   const handleShare = async () => {
     const shareData = {
       title: 'تكي قيمز',
@@ -142,24 +182,25 @@ export default function TakkiGamesPortal() {
       showNotification("قريباً: ستتمكن من تثبيت الموقع كتطبيق!", "info");
   };
 
-  // --- دالة جلب الألعاب (مع حماية قصوى ضد الأخطاء) ---
   const fetchGames = async (pageNum = 1, append = false) => {
     if (append) setIsLoadingMore(true); else setIsLoading(true);
     
     const TARGET_URL = `https://gamemonetize.com/feed.php?format=0&num=${GAMES_PER_PAGE}&page=${pageNum}`;
-    // استخدام وسيط api.codetabs.com لأنه أكثر استقراراً حالياً
-    const PROXY_URL = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(TARGET_URL)}`;
+    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
 
     try {
         const response = await fetch(PROXY_URL);
         if (!response.ok) throw new Error("Network Error");
         
         const data = await response.json();
-        const actualGameData = Array.isArray(data) ? data : [];
+        let actualGameData = [];
+        try {
+            if (data.contents) actualGameData = JSON.parse(data.contents);
+        } catch (e) { console.warn("JSON Parse error", e); }
         
-        // إذا لم يرجع السيرفر بيانات، نستخدم قائمة الطوارئ
-        if (actualGameData.length === 0) {
-            throw new Error("No games found");
+        if (!Array.isArray(actualGameData) || actualGameData.length === 0) {
+            if (!append) throw new Error("No games found");
+            setIsLoadingMore(false); return;
         }
 
         const processedGames = actualGameData.map((game, index) => {
@@ -195,20 +236,18 @@ export default function TakkiGamesPortal() {
     } catch (error) {
         console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
-        
         if (!append) {
-             // --- خطة الطوارئ: عرض القائمة الاحتياطية الممتلئة ---
-             const processedBackup = BACKUP_GAMES.map((game, index) => ({
-                 ...game,
-                 color: CARD_COLORS[index % CARD_COLORS.length],
-                 xpReward: 50,
-                 isHot: index === 4, // Moto X3M
-                 isNew: index === 8  // Uno
-             }));
-             
-             setGames(processedBackup);
-             setFeaturedGame(processedBackup[4]); // Moto X3M كبانر
-             showNotification("جاري عرض أفضل الألعاب المختارة (تحقق من الاتصال لجلب المزيد)", "info");
+             // Fallback Games
+             const fallbackGames = [
+                { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
+                { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
+                { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
+                { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
+            ];
+            const processedFallback = fallbackGames.map((game, index) => ({ ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 }));
+            setGames(processedFallback);
+            setFeaturedGame(processedFallback[0]);
+            showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
         }
     }
   };
@@ -298,7 +337,10 @@ export default function TakkiGamesPortal() {
                     {filteredGames.map((game, index) => (
                     <React.Fragment key={game.id}>
                         {index === 4 && <div className="col-span-full"><AdSpace position="بين الألعاب" className="bg-slate-800/30 border-slate-700/30 min-h-[90px]" /></div>}
-                        <div onClick={() => openGame(game)} className="group relative bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-900/20 cursor-pointer">
+                        <div 
+                            onClick={() => openGame(game)}
+                            className="group relative bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-900/20 cursor-pointer"
+                        >
                             <div className={`h-44 w-full bg-gradient-to-br ${game.color} relative overflow-hidden flex items-center justify-center`}>
                                 <img 
                                     src={game.image} 
@@ -313,6 +355,7 @@ export default function TakkiGamesPortal() {
                                 <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10"><Star size={10} className="text-yellow-400 fill-yellow-400" /> {game.rating}</div>
                                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20"><button className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40"><Play size={24} className="fill-current ml-1" /></button></div>
                             </div>
+
                             <div className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <h3 className="font-bold text-white truncate text-lg group-hover:text-emerald-400 transition-colors pr-1">{game.title}</h3>
@@ -359,10 +402,20 @@ export default function TakkiGamesPortal() {
             <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0 shadow-lg z-10">
                 <div className="flex items-center gap-4"><button onClick={closeGame} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full"><X size={24} /></button><div className="flex items-center gap-3 border-r border-slate-800 pr-4 mr-2"><h3 className="font-bold text-white text-sm">{selectedGame.title}</h3></div></div>
             </div>
-            <div className="flex-1 bg-black relative overflow-hidden flex items-center justify-center">
-                {gameLoading ? <div className="text-emerald-400 font-bold animate-pulse">جاري التشغيل...</div> : <iframe className="w-full h-full border-none" src={selectedGame.url} title={selectedGame.title} allow="autoplay; fullscreen; gamepad;" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock" />}
+            {/* تم تعديل منطقة اللعب لتكون قابلة للتمرير مع فيديو الشرح */}
+            <div className="flex-1 bg-black relative overflow-y-auto">
+                <div className="w-full h-[65vh] md:h-[80vh] flex items-center justify-center bg-black sticky top-0 z-20">
+                    {gameLoading ? <div className="text-emerald-400 font-bold animate-pulse">جاري التشغيل...</div> : <iframe className="w-full h-full border-none" src={selectedGame.url} title={selectedGame.title} allow="autoplay; fullscreen; gamepad;" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock" />}
+                </div>
+                
+                {/* منطقة المحتوى الإضافي أسفل اللعبة */}
+                <div className="p-4 md:p-8 space-y-6 bg-[#0f172a] min-h-[50vh]">
+                    <AdSpace position="بانر أسفل اللعبة" className="w-[728px] h-[90px]" />
+                    
+                    {/* فيديو الشرح */}
+                    <Walkthrough gameId={selectedGame.id} />
+                </div>
             </div>
-            <div className="bg-slate-900 border-t border-slate-800 p-2 flex justify-center"><AdSpace position="بانر أسفل اللعبة" className="w-[728px] h-[90px]" /></div>
         </div>
       )}
 
