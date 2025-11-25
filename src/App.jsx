@@ -4,69 +4,48 @@ import { Play, Search, Menu, X, Star, Zap, Trophy, Grid, Target, RefreshCw, Game
 // --- إعدادات النظام ---
 const GAMES_PER_PAGE = 100;
 
-// --- بيانات المنظمة (SEO) ---
-const ORG_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "تكي قيمز",
-  "url": "https://takkigames.com",
-  "logo": "https://img.gamedistribution.com/logo.jpg",
-  "sameAs": ["https://twitter.com/takkigames"]
-};
-
 // --- قاموس الترجمة ---
 const CATEGORY_TRANSLATIONS = {
   "Racing": "سباق", "Action": "أكشن", "Shooting": "تصويب", "Arcade": "أركيد",
   "Puzzle": "ألغاز", "Girls": "بنات", "Sports": "رياضة", "Adventure": "مغامرات",
   "Strategy": "استراتيجية", "Education": "تعليم", "Fighting": "قتال",
-  "Board": "ألعاب لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
+  "Board": "لوحية", "Multiplayer": "جماعية", "Driving": "قيادة", "IO": "تحدي",
   "2 Player": "لاعبين", "3D": "ثلاثية الأبعاد"
 };
+
+const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
 
 const CATEGORY_ICONS = {
   "الكل": LayoutGrid, "سباق": Car, "أكشن": Zap, "تصويب": Crosshair,
   "أركيد": Gamepad, "ألغاز": Puzzle, "بنات": Heart, "رياضة": Trophy
 };
 
-const CATEGORIES = ["الكل", "سباق", "أكشن", "تصويب", "أركيد", "ألغاز", "بنات", "رياضة"];
+// --- قائمة الألعاب الاحتياطية (تظهر فوراً في حال تأخر السيرفر) ---
+// هذه القائمة تضمن أن الموقع لن يظهر فارغاً أبداً
+const BACKUP_GAMES = [
+  { id: "b1", title: "Subway Surfers", category: "أكشن", image: "https://img.gamedistribution.com/0c2a7c7380624a57a1197225a6503550-512x512.jpeg", url: "https://html5.gamedistribution.com/0c2a7c7380624a57a1197225a6503550/", rating: "4.9", players: "1M+" },
+  { id: "b2", title: "Temple Run 2", category: "مغامرات", image: "https://img.gamedistribution.com/f6c4c213338147e28606478f4561b30b-512x512.jpeg", url: "https://html5.gamedistribution.com/f6c4c213338147e28606478f4561b30b/", rating: "4.8", players: "800K" },
+  { id: "b3", title: "Candy Riddles", category: "ألغاز", image: "https://img.gamedistribution.com/4e25605750b1450ba0125a36e0498dc2-512x512.jpeg", url: "https://html5.gamedistribution.com/4e25605750b1450ba0125a36e0498dc2/", rating: "4.7", players: "500K" },
+  { id: "b4", title: "8 Ball Pool", category: "رياضة", image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://html5.gamedistribution.com/9d2d564c537645d7a12a9478c4730063/", rating: "4.6", players: "1.2M" },
+  { id: "b5", title: "Moto X3M", category: "سباق", image: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://html5.gamedistribution.com/5d508d0393344338b71d723341594892/", rating: "4.9", players: "900K", isHot: true },
+  { id: "b6", title: "Stickman Hook", category: "أكشن", image: "https://img.gamedistribution.com/9d24c696657c4a5e855137640b271b09-512x512.jpeg", url: "https://html5.gamedistribution.com/9d24c696657c4a5e855137640b271b09/", rating: "4.5", players: "400K" },
+  { id: "b7", title: "Bubble Shooter", category: "أركيد", image: "https://img.gamedistribution.com/8479756a8f22444990c215071806f4a6-512x512.jpeg", url: "https://html5.gamedistribution.com/8479756a8f22444990c215071806f4a6/", rating: "4.4", players: "300K" },
+  { id: "b8", title: "Ludo Hero", category: "ألعاب لوحية", image: "https://img.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b-512x512.jpeg", url: "https://html5.gamedistribution.com/a46f5366e07342f28725d9c6247f2d2b/", rating: "4.8", players: "600K" },
+  { id: "b9", title: "Uno Online", category: "ورق", image: "https://img.gamedistribution.com/f804d32e989243d68d505a20785194e4-512x512.jpeg", url: "https://html5.gamedistribution.com/f804d32e989243d68d505a20785194e4/", rating: "4.7", players: "1M" },
+  { id: "b10", title: "Drift Boss", category: "سباق", image: "https://img.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090-512x512.jpeg", url: "https://html5.gamedistribution.com/d0bc2d996c0f4320bd273d6099239090/", rating: "4.6", players: "250K" },
+  { id: "b11", title: "Basketball Stars", category: "رياضة", image: "https://img.gamedistribution.com/6603602797824b51a8d42277075824f4-512x512.jpeg", url: "https://html5.gamedistribution.com/6603602797824b51a8d42277075824f4/", rating: "4.5", players: "350K" },
+  { id: "b12", title: "Fireboy & Watergirl", category: "مغامرات", image: "https://img.gamedistribution.com/6a08097f3a694d1796f421762922e059-512x512.jpeg", url: "https://html5.gamedistribution.com/6a08097f3a694d1796f421762922e059/", rating: "4.8", players: "2M" },
+  { id: "b13", title: "Pac-Xon", category: "أركيد", image: "https://img.gamedistribution.com/e1692f876f64429797a4c28405b3a639-512x512.jpeg", url: "https://html5.gamedistribution.com/e1692f876f64429797a4c28405b3a639/", rating: "4.3", players: "150K" },
+  { id: "b14", title: "Football Legends", category: "رياضة", image: "https://img.gamedistribution.com/1832764045f14268ad5567760b525485-512x512.jpeg", url: "https://html5.gamedistribution.com/1832764045f14268ad5567760b525485/", rating: "4.6", players: "500K" },
+  { id: "b15", title: "Vex 4", category: "أكشن", image: "https://img.gamedistribution.com/8b462504672846a69814a28a007a73e5-512x512.jpeg", url: "https://html5.gamedistribution.com/8b462504672846a69814a28a007a73e5/", rating: "4.7", players: "400K" },
+  { id: "b16", title: "Paper.io 2", category: "تحدي", image: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com", rating: "4.8", players: "3M", isHot: true },
+  { id: "b17", title: "Chess Grandmaster", category: "استراتيجية", image: "https://img.gamedistribution.com/6c92d162e0404b37af7204342c836221-512x512.jpeg", url: "https://html5.gamedistribution.com/6c92d162e0404b37af7204342c836221/", rating: "4.5", players: "200K" },
+  { id: "b18", title: "Cooking Fast", category: "بنات", image: "https://img.gamedistribution.com/1133146707f045458006dc1f78124f47-512x512.jpeg", url: "https://html5.gamedistribution.com/1133146707f045458006dc1f78124f47/", rating: "4.6", players: "600K" },
+  { id: "b19", title: "Truck Trials", category: "سباق", image: "https://img.gamedistribution.com/c642041728834816828695c235f1d610-512x512.jpeg", url: "https://html5.gamedistribution.com/c642041728834816828695c235f1d610/", rating: "4.4", players: "100K" },
+  { id: "b20", title: "Solitaire Classic", category: "ورق", image: "https://img.gamedistribution.com/73343666631c4b709854df60e5441ec2-512x512.jpeg", url: "https://html5.gamedistribution.com/73343666631c4b709854df60e5441ec2/", rating: "4.7", players: "1M+" }
+];
 
-// --- دالة تحديث Schema للعبة الحالية (للتسويق الآلي) ---
-const updateGameSchema = (game) => {
-  const scriptId = 'game-json-ld';
-  let script = document.getElementById(scriptId);
-  
-  if (game) {
-      const schema = {
-        "@context": "https://schema.org",
-        "@type": "VideoGame",
-        "name": game.title,
-        "description": `العب ${game.title} مجاناً اون لاين. لعبة ${game.category} ممتعة بدون تحميل.`,
-        "genre": game.category,
-        "url": window.location.href,
-        "image": game.image,
-        "playMode": "SinglePlayer",
-        "applicationCategory": "Game",
-        "operatingSystem": "Any",
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": game.rating,
-            "ratingCount": "150",
-            "bestRating": "5",
-            "worstRating": "1"
-        }
-      };
-
-      if (!script) {
-        script = document.createElement('script');
-        script.id = scriptId;
-        script.type = 'application/ld+json';
-        document.head.appendChild(script);
-      }
-      script.text = JSON.stringify(schema);
-  }
-};
-
-// --- مكون الإعلانات الذكي (مثبت الحجم لمنع CLS) ---
+// --- مكون الإعلانات الذكي ---
 const AdSpace = ({ position, className, customImage, customLink }) => {
   const adRef = useRef(null);
   useEffect(() => {
@@ -80,8 +59,7 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
   }, [customImage]);
   
   return (
-    // تم إضافة min-height و bg-slate-800 لحجز المكان ومنع الاهتزاز
-    <div className={`overflow-hidden rounded-xl my-6 flex justify-center items-center shadow-lg bg-slate-800/50 min-h-[90px] transition-all ${className}`}>
+    <div className={`overflow-hidden rounded-xl my-6 flex justify-center items-center shadow-lg bg-slate-800/50 min-h-[90px] ${className}`}>
       {customImage ? (
         <a href={customLink || "#"} target="_blank" rel="noopener noreferrer" className="block w-full h-full relative group">
             <img src={customImage} alt="Ad" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
@@ -97,25 +75,26 @@ const AdSpace = ({ position, className, customImage, customLink }) => {
   );
 };
 
-// --- مكون البانر الرئيسي (Hero) ---
+// --- مكون البانر الرئيسي ---
 const HeroSection = ({ game, onPlay }) => {
-  if (!game) return <div className="w-full h-64 md:h-80 bg-slate-800 rounded-3xl animate-pulse mb-10 shadow-lg"></div>; 
+  // إذا لم تتوفر لعبة، نستخدم Moto X3M كلعبة افتراضية
+  const heroGame = game || BACKUP_GAMES[4]; 
   
   return (
-    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(game)}>
+    <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group cursor-pointer bg-slate-900" onClick={() => onPlay(heroGame)}>
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-900 z-0">
          <img 
-            src={game.image} 
+            src={heroGame.image} 
             className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700" 
-            alt={game.title}
-            loading="eager" // تحميل سريع للصورة الأولى لتحسين LCP
+            alt={heroGame.title}
+            loading="eager"
             onError={(e) => { e.target.style.display = 'none'; }}
          />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10"></div>
       <div className="absolute bottom-0 right-0 p-6 md:p-10 z-20 w-full md:w-2/3 text-right">
         <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full mb-3 animate-pulse">🔥 لعبة مميزة</span>
-        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{game.title}</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg truncate">{heroGame.title}</h2>
         <p className="text-slate-300 text-sm md:text-base mb-6 line-clamp-2">استمتع بأقوى الألعاب الحصرية على تكي قيمز. العب الآن مجاناً وتحدى أصدقاءك!</p>
         <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm md:text-base font-bold px-8 py-3 rounded-full shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-1 flex items-center gap-2 w-fit">
           <Play size={20} fill="currentColor" /> العب الآن
@@ -143,24 +122,7 @@ export default function TakkiGamesPortal() {
   const gameTimerRef = useRef(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify(ORG_SCHEMA);
-    document.head.appendChild(script);
-
-    if (selectedGame) {
-        document.title = `العب ${selectedGame.title} مجاناً | تكي قيمز`;
-        updateGameSchema(selectedGame); // تفعيل التسويق التلقائي للعبة
-    } else {
-        document.title = "تكي قيمز | أفضل العاب المتصفح المجانية في السعودية";
-        updateGameSchema(null);
-    }
-    return () => { 
-        if(script.parentNode) script.parentNode.removeChild(script); 
-    }
-  }, [selectedGame]);
-
+  // --- دالة المشاركة ---
   const handleShare = async () => {
     const shareData = {
       title: 'تكي قيمز',
@@ -180,25 +142,24 @@ export default function TakkiGamesPortal() {
       showNotification("قريباً: ستتمكن من تثبيت الموقع كتطبيق!", "info");
   };
 
+  // --- دالة جلب الألعاب (مع حماية قصوى ضد الأخطاء) ---
   const fetchGames = async (pageNum = 1, append = false) => {
     if (append) setIsLoadingMore(true); else setIsLoading(true);
     
     const TARGET_URL = `https://gamemonetize.com/feed.php?format=0&num=${GAMES_PER_PAGE}&page=${pageNum}`;
-    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(TARGET_URL)}`;
+    // استخدام وسيط api.codetabs.com لأنه أكثر استقراراً حالياً
+    const PROXY_URL = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(TARGET_URL)}`;
 
     try {
         const response = await fetch(PROXY_URL);
         if (!response.ok) throw new Error("Network Error");
         
         const data = await response.json();
-        let actualGameData = [];
-        try {
-            if (data.contents) actualGameData = JSON.parse(data.contents);
-        } catch (e) { console.warn("JSON Parse error", e); }
+        const actualGameData = Array.isArray(data) ? data : [];
         
-        if (!Array.isArray(actualGameData) || actualGameData.length === 0) {
-            if (!append) throw new Error("No games found");
-            setIsLoadingMore(false); return;
+        // إذا لم يرجع السيرفر بيانات، نستخدم قائمة الطوارئ
+        if (actualGameData.length === 0) {
+            throw new Error("No games found");
         }
 
         const processedGames = actualGameData.map((game, index) => {
@@ -234,17 +195,20 @@ export default function TakkiGamesPortal() {
     } catch (error) {
         console.error("Fetch Error:", error);
         setIsLoading(false); setIsLoadingMore(false);
+        
         if (!append) {
-             const fallbackGames = [
-                { id: "1", title: "Paper.io 2", category: "أركيد", thumb: "https://img.gamedistribution.com/9d2d564c537645d7a12a9478c4730063-512x512.jpeg", url: "https://paper-io.com" },
-                { id: "2", title: "Moto X3M", category: "سباق", thumb: "https://img.gamedistribution.com/5d508d0393344338b71d723341594892-512x512.jpeg", url: "https://moto-x3m.io" },
-                { id: "3", title: "Candy Clicker", category: "ألغاز", thumb: "https://img.gamedistribution.com/6a8a28a3363542a687a067413774a408-512x512.jpeg", url: "https://poki.com" },
-                { id: "4", title: "Sniper 3D", category: "تصويب", thumb: "https://img.gamedistribution.com/8d13f2534c254776a0667c4f73272c65-512x512.jpeg", url: "https://krunker.io" },
-            ];
-            const processedFallback = fallbackGames.map((game, index) => ({ ...game, image: game.thumb, color: CARD_COLORS[index % CARD_COLORS.length], rating: "4.5", players: "10K", xpReward: 50, isHot: index===0 }));
-            setGames(processedFallback);
-            setFeaturedGame(processedFallback[0]);
-            showNotification("جاري عرض الألعاب الأساسية (تحقق من الاتصال)", "info");
+             // --- خطة الطوارئ: عرض القائمة الاحتياطية الممتلئة ---
+             const processedBackup = BACKUP_GAMES.map((game, index) => ({
+                 ...game,
+                 color: CARD_COLORS[index % CARD_COLORS.length],
+                 xpReward: 50,
+                 isHot: index === 4, // Moto X3M
+                 isNew: index === 8  // Uno
+             }));
+             
+             setGames(processedBackup);
+             setFeaturedGame(processedBackup[4]); // Moto X3M كبانر
+             showNotification("جاري عرض أفضل الألعاب المختارة (تحقق من الاتصال لجلب المزيد)", "info");
         }
     }
   };
@@ -335,8 +299,13 @@ export default function TakkiGamesPortal() {
                     <React.Fragment key={game.id}>
                         {index === 4 && <div className="col-span-full"><AdSpace position="بين الألعاب" className="bg-slate-800/30 border-slate-700/30 min-h-[90px]" /></div>}
                         <div onClick={() => openGame(game)} className="group relative bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-900/20 cursor-pointer">
-                            <div className={`h-44 w-full bg-gradient-to-br ${game.color} relative overflow-hidden flex items-center justify-center bg-slate-700`}>
-                                <img src={game.image} alt={game.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500" loading="lazy" onError={(e) => {e.target.style.display='none';}} />
+                            <div className={`h-44 w-full bg-gradient-to-br ${game.color} relative overflow-hidden flex items-center justify-center`}>
+                                <img 
+                                    src={game.image} 
+                                    alt={game.title}
+                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+                                    onError={(e) => {e.target.style.display='none';}} 
+                                />
                                 <div className="absolute top-3 left-3 flex gap-2 z-10">
                                     {game.isHot && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><Flame size={10} /> رائج</span>}
                                     {game.isNew && <span className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><Sparkles size={10} /> جديد</span>}
@@ -358,6 +327,7 @@ export default function TakkiGamesPortal() {
                     </React.Fragment>
                     ))}
                 </div>
+                
                 <div className="mt-12 flex justify-center">
                     <button onClick={handleLoadMore} disabled={isLoadingMore} className="flex items-center gap-2 px-8 py-4 bg-slate-800 hover:bg-emerald-600 text-white font-bold rounded-full border border-slate-700 hover:border-emerald-500 transition-all transform hover:scale-105 disabled:opacity-50 shadow-lg">
                         {isLoadingMore ? "جاري جلب ألعاب جديدة..." : <><ChevronDown size={20} /> اكتشف المزيد من الألعاب</>}
@@ -380,7 +350,7 @@ export default function TakkiGamesPortal() {
                     <a href="#" className="hover:text-emerald-400 transition-colors">سياسة الخصوصية</a>
                 </div>
             </div>
-            <div className="mt-8 pt-8 border-t border-slate-800 text-xs text-slate-500 text-center">© 2024 TakkiGames.com - جميع الحقوق محفوظة.</div>
+            <div className="mt-8 pt-8 border-t border-slate-800 text-xs text-slate-500 text-center">© {new Date().getFullYear()} TakkiGames.com - جميع الحقوق محفوظة.</div>
         </div>
       </footer>
 
